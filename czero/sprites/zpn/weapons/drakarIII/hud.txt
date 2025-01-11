@@ -1,0 +1,4 @@
+3
+weapon			640 zpn/weapons/drakarIII/640hud236	0	90	170	45
+weapon_s		640 zpn/weapons/drakarIII/640hud236	0	135	170	45
+ammo			640 zpn/weapons/drakarIII/640hud236	1	231	24	24
