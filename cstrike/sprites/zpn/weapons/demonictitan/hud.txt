@@ -1,0 +1,5 @@
+4
+weapon			640 rezombie/weapons/demonictitan/640hud220	0	90	170	45
+weapon_s		640 rezombie/weapons/demonictitan/640hud220	0	135	170	45
+ammo			640 rezombie/weapons/demonictitan/640hud99	49	231	24	24
+ammo2			640 rezombie/weapons/demonictitan/640hud99	73	231	24	24
