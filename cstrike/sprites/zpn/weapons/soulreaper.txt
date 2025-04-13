@@ -1,0 +1,6 @@
+5
+weapon		640	zpn/weapons/soulreaper/640hud241	0	0	170	45
+weapon_s	640	zpn/weapons/soulreaper/640hud241	0	45	170	45
+ammo		640	zpn/weapons/soulreaper/640hud241	1	231	24	24
+ammo2		640	zpn/weapons/soulreaper/640hud224	49	231	24	24
+kill		640 	zpn/weapons/soulreaper/640hud241	172	0	48	16
