@@ -1,4 +1,0 @@
-3
-weapon		640	zpn/weapons/ethereal/640hud74	0	0	170	45
-weapon_s	640	zpn/weapons/ethereal/640hud74	0	45	170	45
-ammo		640	zpn/weapons/ethereal/640hud7x	144	124	24	24
