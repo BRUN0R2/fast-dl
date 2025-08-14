@@ -115,9 +115,10 @@
             <div id="error" class="error" hidden></div>
             <div id="selection-toolbar" class="controls" style="display:none; margin:8px 0 12px 0">
                 <div class="filters" style="gap:10px">
+                    <button id="btn-select-all" type="button">Selecionar tudo</button>
                     <button id="btn-select-visible" type="button">Selecionar visíveis</button>
                     <button id="btn-clear-selection" type="button" class="btn ghost">Limpar seleção</button>
-                    <button id="btn-delete-selected" type="button" style="background:#7f1d1d;border-color:#7f1d1d">Excluir selecionados (<span id="selected-count">0</span>)</button>
+                    <button id="btn-delete-selected" type="button" class="danger">Excluir selecionados (<span id="selected-count">0</span>)</button>
                 </div>
             </div>
             <ul id="tree" class="tree" role="tree"></ul>

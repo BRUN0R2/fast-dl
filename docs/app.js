@@ -98,8 +98,82 @@ function buildRow(item, depth){
         }
     }
 
+    // três pontinhos (menu)
+    const dotsWrap = document.createElement('div');
+    dotsWrap.className = 'dots';
+    const menuBtn = document.createElement('button');
+    menuBtn.className = 'menu-btn';
+    menuBtn.type = 'button';
+    menuBtn.textContent = '⋮';
+    dotsWrap.appendChild(menuBtn);
+    const menu = document.createElement('div');
+    menu.className = 'ctx-menu';
+    const btnRename = document.createElement('button'); btnRename.textContent = 'Renomear';
+    const btnDelete = document.createElement('button'); btnDelete.textContent = 'Excluir';
+    menu.appendChild(btnRename); menu.appendChild(btnDelete);
+    dotsWrap.appendChild(menu);
+
+    let menuOpen = false;
+    function closeMenu(){ menu.classList.remove('open'); menuOpen = false; }
+    function openMenu(){
+        // posiciona próximo ao botão
+        const r = menuBtn.getBoundingClientRect();
+        menu.style.left = (r.left + window.scrollX) + 'px';
+        menu.style.top = (r.bottom + window.scrollY + 6) + 'px';
+        menu.classList.add('open');
+        menuOpen = true;
+    }
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if(menuOpen) closeMenu(); else openMenu();
+    });
+    document.addEventListener('click', (e) => { if(menuOpen && !menu.contains(e.target) && e.target !== menuBtn) closeMenu(); });
+
+    btnDelete.addEventListener('click', async (e) => {
+        e.stopPropagation(); closeMenu();
+        // Seleciona somente este item e chama exclusão múltipla
+        selectedPaths.clear();
+        selectedPaths.add(item.name);
+        updateSelectionToolbar();
+        const btn = document.getElementById('btn-delete-selected');
+        if(btn) btn.click();
+    });
+    btnRename.addEventListener('click', async (e) => {
+        e.stopPropagation(); closeMenu();
+        const nameOnly = item.name.replace(/^cstrike\//, '');
+        const to = prompt('Novo caminho (relativo a cstrike/):', nameOnly);
+        if(!to || to === nameOnly) return;
+        try{
+            const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+            const owner = hash.get('owner') || DEFAULT_OWNER;
+            const repo = hash.get('repo') || DEFAULT_REPO;
+            const branch = hash.get('branch') || DEFAULT_BRANCH || 'main';
+            const fromRel = item.name;
+            const toRel = to.startsWith('cstrike/') ? to : `cstrike/${to}`;
+            const sha = await getShaForPath(owner, repo, branch, fromRel);
+            if(!sha) throw new Error('Origem não encontrada.');
+            const blob = await fetchJSON(`https://api.github.com/repos/${owner}/${repo}/git/blobs/${sha}`);
+            await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(toRel)}`, {
+                method:'PUT', headers:{
+                    'Authorization': `Bearer ${authToken}`,
+                    'Accept': 'application/vnd.github+json',
+                    'Content-Type': 'application/json'
+                }, body: JSON.stringify({ message:`chore: rename ${fromRel} -> ${toRel}`, content: blob.content, branch })
+            });
+            await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(fromRel)}`, {
+                method:'DELETE', headers:{
+                    'Authorization': `Bearer ${authToken}`,
+                    'Accept': 'application/vnd.github+json',
+                    'Content-Type': 'application/json'
+                }, body: JSON.stringify({ message:`chore: delete ${fromRel}`, sha, branch })
+            });
+            loadRepo(owner, repo, branch);
+        }catch(err){ alert(err.message || err); }
+    });
+
     row.appendChild(name);
     row.appendChild(meta);
+    row.appendChild(dotsWrap);
     row.appendChild(selectWrap);
     // dataset para seleção em massa
     li.dataset.path = item.name;
