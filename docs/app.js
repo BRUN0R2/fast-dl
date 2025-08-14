@@ -135,6 +135,8 @@ function buildTreeList(files, folders, owner, repo, branch){
     };
 
     for(const d of folders){
+        // Evita criar um filho apontando para a própria raiz (cstrike -> cstrike)
+        if(d.path === 'cstrike') continue;
         const parent = d.path.includes('/') ? d.path.slice(0, d.path.lastIndexOf('/')) : '';
         pushChild(parent || 'cstrike', { type:'dir', name:d.path, path:d.path });
     }
@@ -143,12 +145,14 @@ function buildTreeList(files, folders, owner, repo, branch){
         pushChild(parent, { type:'file', name:f.path, path:f.path, size:f.size || 0, html_url: makeHtmlUrl(f.path) });
     }
 
-    function hasMatchDeep(folderPath, query){
+    function hasMatchDeep(folderPath, query, visited = new Set()){
+        if(visited.has(folderPath)) return false;
+        visited.add(folderPath);
         const list = children.get(folderPath) || [];
         for(const child of list){
             const nameOnly = child.name.replace(/^cstrike\//, '');
             if(child.type === 'dir'){
-                if(nameOnly.toLowerCase().includes(query) || hasMatchDeep(child.name, query)) return true;
+                if(nameOnly.toLowerCase().includes(query) || hasMatchDeep(child.name, query, visited)) return true;
             }else{
                 if(nameOnly.toLowerCase().includes(query)) return true;
             }
@@ -156,7 +160,9 @@ function buildTreeList(files, folders, owner, repo, branch){
         return false;
     }
 
-    function renderFolder(folderPath, depth){
+    function renderFolder(folderPath, depth, visited = new Set()){
+        if(visited.has(folderPath)) return; // proteção contra ciclos improváveis
+        visited.add(folderPath);
         const list = children.get(folderPath) || [];
         list.sort((a,b)=>{
             if(a.type !== b.type) return a.type === 'dir' ? -1 : 1;
@@ -167,12 +173,13 @@ function buildTreeList(files, folders, owner, repo, branch){
             const item = { type: 'dir', name: folderPath, open: openDirs.has(folderPath) };
             const li = buildRow(item, depth);
             const caret = li.querySelector('.caret');
-            if(caret){
-                caret.addEventListener('click', () => {
-                    if(openDirs.has(folderPath)) openDirs.delete(folderPath); else openDirs.add(folderPath);
-                    buildTreeList(files, folders, owner, repo, branch);
-                });
-            }
+            const row = li.querySelector('.row');
+            const toggle = () => {
+                if(openDirs.has(folderPath)) openDirs.delete(folderPath); else openDirs.add(folderPath);
+                buildTreeList(files, folders, owner, repo, branch);
+            };
+            if(caret) caret.addEventListener('click', toggle);
+            if(row) row.addEventListener('click', toggle);
             ul.appendChild(li);
         }
 
@@ -181,7 +188,7 @@ function buildTreeList(files, folders, owner, repo, branch){
                 if(child.type === 'dir'){
                     const nameOnly = child.name.replace(/^cstrike\//, '');
                     const show = !q || nameOnly.toLowerCase().includes(q) || hasMatchDeep(child.name, q);
-                    if(show) renderFolder(child.name, depth + (folderPath === 'cstrike' ? 0 : 1));
+                    if(show) renderFolder(child.name, depth + (folderPath === 'cstrike' ? 0 : 1), visited);
                 }else{
                     const nameOnly = child.name.replace(/^cstrike\//, '');
                     if(q && !nameOnly.toLowerCase().includes(q)) continue;
@@ -194,9 +201,17 @@ function buildTreeList(files, folders, owner, repo, branch){
     }
 
     // raiz
-    openDirs.add('cstrike');
-    const rootItem = { type:'dir', name:'cstrike', open:true };
+    if(!openDirs.has('cstrike')) openDirs.add('cstrike');
+    const rootItem = { type:'dir', name:'cstrike', open: openDirs.has('cstrike') };
     const rootLi = buildRow(rootItem, 0);
+    const rootCaret = rootLi.querySelector('.caret');
+    const rootRow = rootLi.querySelector('.row');
+    const toggleRoot = () => {
+        if(openDirs.has('cstrike')) openDirs.delete('cstrike'); else openDirs.add('cstrike');
+        buildTreeList(files, folders, owner, repo, branch);
+    };
+    if(rootCaret) rootCaret.addEventListener('click', toggleRoot);
+    if(rootRow) rootRow.addEventListener('click', toggleRoot);
     ul.appendChild(rootLi);
     renderFolder('cstrike', 0);
 }
