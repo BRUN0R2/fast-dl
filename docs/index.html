@@ -7,7 +7,30 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2" />
+    <script>
+        window.ASSET_BUST = { owner: 'BRUN0R2', repo: 'fast-dl', branch: 'main' };
+        (function(){
+            const cfg = window.ASSET_BUST || {};
+            const owner = cfg.owner || 'BRUN0R2';
+            const repo = cfg.repo || 'fast-dl';
+            const branch = cfg.branch || 'main';
+            const head = document.getElementsByTagName('head')[0];
+            function inject(version){
+                const css = document.createElement('link');
+                css.rel = 'stylesheet';
+                css.href = 'styles.css?v=' + encodeURIComponent(version);
+                head.appendChild(css);
+                const js = document.createElement('script');
+                js.src = 'app.js?v=' + encodeURIComponent(version);
+                head.appendChild(js);
+            }
+            fetch('https://api.github.com/repos/' + owner + '/' + repo + '/commits?per_page=1')
+              .then(r => r.ok ? r.json() : Promise.reject())
+              .then(arr => Array.isArray(arr) && arr[0] && arr[0].sha ? arr[0].sha.substring(0,10) : String(Date.now()))
+              .catch(() => String(Date.now()))
+              .then(inject);
+        })();
+    </script>
 </head>
 <body>
     <header class="site-header">

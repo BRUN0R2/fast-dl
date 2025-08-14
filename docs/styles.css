@@ -106,14 +106,14 @@ body{
 
 /* Chips coloridos por extensão */
 .chip-ext{border-color:rgba(255,255,255,.08); color:#cbd5e1}
-.chip-ext.ext-wad{border-color:var(--accent-2); color:var(--accent-2)}
-.chip-ext.ext-sma{border-color:var(--accent); color:var(--accent)}
-.chip-ext.ext-wav{border-color:#10b981; color:#10b981}
+.chip-ext.ext-wad{border-color:#fb8c00; color:#fb8c00} /* laranja forte */
+.chip-ext.ext-sma{border-color:var(--accent); color:var(--accent)} /* verde-limão */
+.chip-ext.ext-wav{border-color:#10b981; color:#10b981} /* verde esmeralda */
 .chip-ext.ext-inc{border-color:var(--accent); color:var(--accent)}
 .chip-ext.ext-txt{border-color:var(--muted); color:var(--muted)}
 .chip-ext.ext-cfg{border-color:var(--accent-2); color:var(--accent-2)}
-.chip-ext.ext-mdl{border-color:#94a3b8; color:#94a3b8}
-.chip-ext.ext-spr{border-color:#f59e0b; color:#f59e0b}
+.chip-ext.ext-mdl{border-color:#60a5fa; color:#60a5fa} /* azul suave para mdl */
+.chip-ext.ext-spr{border-color:#14b8a6; color:#14b8a6} /* teal para spr */
 
 @media (max-width:720px){
   .stats{grid-template-columns:1fr 1fr}
