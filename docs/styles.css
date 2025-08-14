@@ -108,9 +108,9 @@ body{
 .chip-ext{border-color:rgba(255,255,255,.08); color:#cbd5e1}
 .chip-ext.ext-wad{border-color:#fb8c00 !important; color:#fb8c00 !important} /* laranja forte */
 .chip-ext.ext-sma{border-color:var(--accent); color:var(--accent)} /* verde-limão */
-.chip-ext.ext-wav{border-color:#10b981 !important; color:#10b981 !important} /* verde esmeralda */
+.chip-ext.ext-wav{border-color:#13b958 !important; color:#13b958 !important} /* verde esmeralda */
 .chip-ext.ext-inc{border-color:var(--accent) !important; color:var(--accent) !important}
-.chip-ext.ext-txt{border-color:var(--muted) !important; color:var(--muted) !important}
+.chip-ext.ext-txt{border-color:#95f100; color:#95f100}
 .chip-ext.ext-cfg{border-color:var(--accent-2) !important; color:var(--accent-2) !important}
 .chip-ext.ext-mdl{border-color:#60a5fa !important; color:#60a5fa !important} /* azul suave para mdl */
 .chip-ext.ext-spr{border-color:#14b8a6 !important; color:#14b8a6 !important} /* teal para spr */

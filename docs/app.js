@@ -135,6 +135,18 @@ async function listAllFiles(owner, repo, branch){
 const openDirs = new Set();
 const selectedPaths = new Set();
 
+// cache de dados para busca rápida
+const repoCache = { files: [], folders: [], owner: '', repo: '', branch: '' };
+let searchTimer = null;
+function scheduleFilterRebuild(){
+    if(searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+        if(repoCache.owner && repoCache.repo){
+            buildTreeList(repoCache.files, repoCache.folders, repoCache.owner, repoCache.repo, repoCache.branch);
+        }
+    }, 80);
+}
+
 function buildTreeList(files, folders, owner, repo, branch){
     const ul = $('#tree');
     ul.innerHTML = '';
@@ -167,10 +179,11 @@ function buildTreeList(files, folders, owner, repo, branch){
         const list = children.get(folderPath) || [];
         for(const child of list){
             const nameOnly = child.name.replace(/^cstrike\//, '');
+            const lname = nameOnly.toLowerCase();
             if(child.type === 'dir'){
-                if(nameOnly.toLowerCase().includes(query) || hasMatchDeep(child.name, query, visited)) return true;
+                if(lname.startsWith(query) || hasMatchDeep(child.name, query, visited)) return true;
             }else{
-                if(nameOnly.toLowerCase().includes(query)) return true;
+                if(lname.startsWith(query)) return true;
             }
         }
         return false;
@@ -203,12 +216,14 @@ function buildTreeList(files, folders, owner, repo, branch){
             for(const child of list){
                 if(child.type === 'dir'){
                     const nameOnly = child.name.replace(/^cstrike\//, '');
-                    const show = !q || nameOnly.toLowerCase().includes(q) || hasMatchDeep(child.name, q);
+                    const lname = nameOnly.toLowerCase();
+                    const show = !q || lname.startsWith(q) || hasMatchDeep(child.name, q);
                     if(show) renderFolder(child.name, depth + (folderPath === 'cstrike' ? 0 : 1), visited);
                 }else{
                     const nameOnly = child.name.replace(/^cstrike\//, '');
-                    if(q && !nameOnly.toLowerCase().includes(q)) continue;
-                    if(extFilter && !nameOnly.toLowerCase().endsWith(extFilter.toLowerCase())) continue;
+                    const lname = nameOnly.toLowerCase();
+                    if(q && !lname.startsWith(q)) continue;
+                    if(extFilter && !lname.endsWith(extFilter.toLowerCase())) continue;
                     const li = buildRow(child, depth + (folderPath === 'cstrike' ? 0 : 1));
                     ul.appendChild(li);
                 }
@@ -295,7 +310,14 @@ async function loadRepo(owner, repo, branch){
         $('#controls').hidden = false;
         $('#admin-panel').hidden = false;
 
-        buildTreeList(files, folders, owner, repo, branch || defaultBranch);
+        // cache
+        repoCache.files = files;
+        repoCache.folders = folders;
+        repoCache.owner = owner;
+        repoCache.repo = repo;
+        repoCache.branch = branch || defaultBranch;
+
+        buildTreeList(files, folders, owner, repo, repoCache.branch);
         $('#loading').textContent = '';
     }catch(err){
         $('#error').hidden = false;
@@ -354,17 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadRepo(owner, repo, branch);
     });
 
-    $('#search').addEventListener('input', () => {
-        const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
-        const owner = hash.get('owner');
-        const repo = hash.get('repo');
-        const branch = hash.get('branch') || '';
-        if(owner && repo){
-            listAllFiles(owner, repo, branch).then(({files, folders, defaultBranch}) => {
-                buildTreeList(files, folders, owner, repo, branch || defaultBranch);
-            }).catch(()=>{});
-        }
-    });
+    $('#search').addEventListener('input', scheduleFilterRebuild);
 
     $('#ext-filter').addEventListener('change', () => $('#search').dispatchEvent(new Event('input')));
     $('#show-folders').addEventListener('change', () => $('#search').dispatchEvent(new Event('input')));
