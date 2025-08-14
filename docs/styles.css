@@ -80,6 +80,8 @@ body{
 .tree li:first-child{border-top:none}
 .row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(0,0,0,.15)}
 .row:hover{background:rgba(255,255,255,.03)}
+.row .select{display:flex;align-items:center;gap:6px}
+.row input[type="checkbox"]{accent-color:var(--accent-2);width:16px;height:16px}
 .row .name{flex:1;display:flex;align-items:center;gap:10px;word-break:break-all}
 .row .meta{display:flex;gap:12px;color:var(--muted);font-size:12px}
 .chip{font-size:11px;border:1px solid var(--border);padding:2px 8px;border-radius:999px;color:var(--muted)}
@@ -98,8 +100,20 @@ body{
 .row.file .file-link{color:#cbd5e1}
 
 /* Indicadores de expandir/colapsar */
-.caret{width:10px;height:10px;border-left:6px solid var(--muted);border-top:4px solid transparent;border-bottom:4px solid transparent;display:inline-block;transition:transform .15s ease}
+.caret{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.caret::before{content:"";display:block;border-left:6px solid var(--muted);border-top:4px solid transparent;border-bottom:4px solid transparent}
 .caret.open{transform:rotate(90deg)}
+
+/* Chips coloridos por extensão */
+.chip-ext{border-color:rgba(255,255,255,.08); color:#cbd5e1}
+.chip-ext.ext-wad{border-color:var(--accent-2); color:var(--accent-2)}
+.chip-ext.ext-sma{border-color:var(--accent); color:var(--accent)}
+.chip-ext.ext-wav{border-color:#10b981; color:#10b981}
+.chip-ext.ext-inc{border-color:var(--accent); color:var(--accent)}
+.chip-ext.ext-txt{border-color:var(--muted); color:var(--muted)}
+.chip-ext.ext-cfg{border-color:var(--accent-2); color:var(--accent-2)}
+.chip-ext.ext-mdl{border-color:#94a3b8; color:#94a3b8}
+.chip-ext.ext-spr{border-color:#f59e0b; color:#f59e0b}
 
 @media (max-width:720px){
   .stats{grid-template-columns:1fr 1fr}

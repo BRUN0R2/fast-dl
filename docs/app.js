@@ -43,6 +43,17 @@ function buildRow(item, depth){
 
     const name = document.createElement('div');
     name.className = 'name';
+    const selectWrap = document.createElement('div');
+    selectWrap.className = 'select';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = selectedPaths.has(item.name);
+    checkbox.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if(checkbox.checked) selectedPaths.add(item.name); else selectedPaths.delete(item.name);
+        updateSelectionToolbar();
+    });
+    selectWrap.appendChild(checkbox);
     if(item.type === 'dir'){
         const caret = document.createElement('span');
         caret.className = 'caret' + (item.open ? ' open' : '');
@@ -77,10 +88,11 @@ function buildRow(item, depth){
         sizeChip.textContent = formatBytes(item.size || 0);
         meta.appendChild(sizeChip);
 
-        const ext = getExt(item.name);
+        const ext = getExt(item.name).toLowerCase();
         if(ext){
             const ex = document.createElement('span');
-            ex.className = 'chip';
+            const extClean = ext.replace(/^\./, '');
+            ex.className = `chip chip-ext ext-${extClean}`;
             ex.textContent = ext;
             meta.appendChild(ex);
         }
@@ -88,6 +100,9 @@ function buildRow(item, depth){
 
     row.appendChild(name);
     row.appendChild(meta);
+    row.appendChild(selectWrap);
+    // dataset para seleção em massa
+    li.dataset.path = item.name;
     li.appendChild(row);
     return li;
 }
@@ -116,8 +131,9 @@ async function listAllFiles(owner, repo, branch){
     return { files, folders, defaultBranch, repoInfo };
 }
 
-// estado de expansão das pastas
+// estado de expansão e seleção
 const openDirs = new Set();
+const selectedPaths = new Set();
 
 function buildTreeList(files, folders, owner, repo, branch){
     const ul = $('#tree');
@@ -214,6 +230,7 @@ function buildTreeList(files, folders, owner, repo, branch){
     if(rootRow) rootRow.addEventListener('click', toggleRoot);
     ul.appendChild(rootLi);
     renderFolder('cstrike', 0);
+    updateSelectionToolbar();
 }
 
 function updateMeter(approxBytes){
@@ -347,6 +364,64 @@ document.addEventListener('DOMContentLoaded', () => {
     // auth controls
     $('#btn-auth').addEventListener('click', () => setAuthToken($('#token').value.trim()));
     $('#btn-logout').addEventListener('click', () => { $('#token').value = ''; setAuthToken(''); });
+
+    // seleção em massa
+    $('#btn-select-visible').addEventListener('click', () => {
+        // marca todos os itens atualmente renderizados
+        $$('#tree .row').forEach(row => {
+            const label = row.querySelector('.file-link');
+            if(!label) return;
+            // reconstruir caminho com base no texto + pastas abertas não é trivial.
+            // Em vez disso, usamos dataset no buildRow.
+        });
+        // Nada aqui, deixamos para dataset abaixo
+        $$('#tree li').forEach(li => {
+            const path = li.dataset.path;
+            const cb = li.querySelector('input[type="checkbox"]');
+            if(path && cb){ cb.checked = true; selectedPaths.add(path); }
+        });
+        updateSelectionToolbar();
+    });
+    $('#btn-clear-selection').addEventListener('click', () => {
+        selectedPaths.clear();
+        $$('#tree input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+        updateSelectionToolbar();
+    });
+    $('#btn-delete-selected').addEventListener('click', async () => {
+        try{
+            if(selectedPaths.size === 0) return;
+            const { owner, repo, branch } = await (async()=>{
+                const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+                const owner = hash.get('owner') || DEFAULT_OWNER;
+                const repo = hash.get('repo') || DEFAULT_REPO;
+                const branch = hash.get('branch') || DEFAULT_BRANCH || 'main';
+                return { owner, repo, branch };
+            })();
+            const confirmMsg = `Excluir ${selectedPaths.size} item(ns)? Esta ação cria commits de remoção.`;
+            if(!confirm(confirmMsg)) return;
+            for(const path of Array.from(selectedPaths)){
+                if(!path.startsWith('cstrike/')) continue;
+                const sha = await getShaForPath(owner, repo, branch, path);
+                if(!sha) continue;
+                await (async()=>{
+                    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
+                    const body = { message: `chore: delete ${path}`, sha, branch };
+                    const res = await fetch(url, { method:'DELETE', headers:{
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    }, body: JSON.stringify(body)});
+                    if(!res.ok){
+                        const t = await res.text().catch(()=>"");
+                        throw new Error(`Falha ao excluir ${path}: ${res.status} ${t}`);
+                    }
+                })();
+            }
+            selectedPaths.clear();
+            updateSelectionToolbar();
+            loadRepo(owner, repo, branch);
+        }catch(e){ alert(e.message || e); }
+    });
 
     // admin actions
     async function ensureContext(){
