@@ -2,6 +2,10 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 const ONE_GB = 1024 * 1024 * 1024; // bytes
+// Opcional: defina o repo padrão e esconda o formulário
+const DEFAULT_OWNER = '';
+const DEFAULT_REPO = '';
+const DEFAULT_BRANCH = '';
 
 async function fetchJSON(url, init){
     const res = await fetch(url, init);
@@ -90,8 +94,10 @@ async function listAllFiles(owner, repo, branch){
     const branchInfo = await fetchJSON(`https://api.github.com/repos/${owner}/${repo}/branches/${encodeURIComponent(defaultBranch)}`);
     const treeSha = branchInfo.commit && branchInfo.commit.commit && branchInfo.commit.commit.tree && branchInfo.commit.commit.tree.sha;
     const tree = await fetchJSON(`https://api.github.com/repos/${owner}/${repo}/git/trees/${treeSha}?recursive=1`);
-    const files = (tree.tree || []).filter(n => n.type === 'blob');
-    const folders = (tree.tree || []).filter(n => n.type === 'tree');
+    // Restrição: apenas conteúdo abaixo de cstrike/
+    const allNodes = (tree.tree || []);
+    const files = allNodes.filter(n => n.type === 'blob' && n.path.startsWith('cstrike/'));
+    const folders = allNodes.filter(n => n.type === 'tree' && (n.path === 'cstrike' || n.path.startsWith('cstrike/')));
     return { files, folders, defaultBranch, repoInfo };
 }
 
@@ -153,6 +159,21 @@ function updateMeter(approxBytes){
     const pct = Math.min(100, (approxBytes / ONE_GB) * 100);
     $('#size-bar').style.width = pct.toFixed(2) + '%';
     $('#size-label').textContent = `${formatBytes(approxBytes)} / 1 GB`;
+    const remaining = Math.max(0, ONE_GB - approxBytes);
+    $('#size-remaining').textContent = formatBytes(remaining);
+}
+
+// Autenticação (opcional) para operações de escrita
+let authToken = '';
+function setAuthToken(token){
+    authToken = token || '';
+    if(authToken){
+        localStorage.setItem('gh_token', authToken);
+        $('#auth-status').textContent = 'Conectado';
+    }else{
+        localStorage.removeItem('gh_token');
+        $('#auth-status').textContent = 'Desconectado';
+    }
 }
 
 async function loadRepo(owner, repo, branch){
@@ -177,7 +198,7 @@ async function loadRepo(owner, repo, branch){
         // update header
         $('#repo-title').textContent = `${owner}/${repo}`;
         $('#repo-desc').textContent = repoInfo.description || '';
-        $('#repo-link').href = `https://github.com/${owner}/${repo}`;
+        $('#repo-link').href = `https://github.com/${owner}/${repo}/tree/${encodeURIComponent(branch || defaultBranch)}/cstrike`;
         $('#branch-name').textContent = branch || defaultBranch;
         $('#files-count').textContent = files.length.toString();
         $('#folders-count').textContent = folders.length.toString();
@@ -185,6 +206,7 @@ async function loadRepo(owner, repo, branch){
 
         $('#repo-summary').hidden = false;
         $('#controls').hidden = false;
+        $('#admin-panel').hidden = false;
 
         buildTreeList(files, folders, owner, repo, branch || defaultBranch);
         $('#loading').textContent = '';
@@ -219,6 +241,22 @@ function saveToHash(owner, repo, branch){
 document.addEventListener('DOMContentLoaded', () => {
     restoreFromHash();
 
+    // restore token
+    const saved = localStorage.getItem('gh_token');
+    if(saved){
+        $('#token').value = saved;
+        setAuthToken(saved);
+    }
+
+    // Se quiser fixar o repositório e ocultar o formulário
+    if(DEFAULT_OWNER && DEFAULT_REPO){
+        $('#owner').value = DEFAULT_OWNER;
+        $('#repo').value = DEFAULT_REPO;
+        if(DEFAULT_BRANCH) $('#branch').value = DEFAULT_BRANCH;
+        $('#repo-form').style.display = 'none';
+        loadRepo(DEFAULT_OWNER, DEFAULT_REPO, DEFAULT_BRANCH);
+    }
+
     $('#repo-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const owner = $('#owner').value.trim();
@@ -244,6 +282,170 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#ext-filter').addEventListener('change', () => $('#search').dispatchEvent(new Event('input')));
     $('#show-folders').addEventListener('change', () => $('#search').dispatchEvent(new Event('input')));
     $('#flat-view').addEventListener('change', () => $('#search').dispatchEvent(new Event('input')));
+
+    // auth controls
+    $('#btn-auth').addEventListener('click', () => setAuthToken($('#token').value.trim()));
+    $('#btn-logout').addEventListener('click', () => { $('#token').value = ''; setAuthToken(''); });
+
+    // admin actions
+    async function ensureContext(){
+        const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+        const owner = hash.get('owner');
+        const repo = hash.get('repo');
+        const branch = hash.get('branch') || '';
+        if(!owner || !repo) throw new Error('Defina dono e repositório.');
+        return { owner, repo, branch };
+    }
+
+    async function githubRequest(method, url, body){
+        if(!authToken) throw new Error('Não autenticado. Informe o token.');
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Accept': 'application/vnd.github+json',
+                'Content-Type': 'application/json'
+            },
+            body: body ? JSON.stringify(body) : undefined
+        });
+        if(!res.ok){
+            const text = await res.text().catch(()=>"");
+            throw new Error(`GitHub API ${res.status}: ${text || res.statusText}`);
+        }
+        return res.json();
+    }
+
+    async function getShaForPath(owner, repo, branch, path){
+        const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json', ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {}) } });
+        if(res.status === 404) return null;
+        if(!res.ok){
+            const text = await res.text().catch(()=>"");
+            throw new Error(`Erro ${res.status}: ${text || res.statusText}`);
+        }
+        const data = await res.json();
+        return data.sha || null;
+    }
+
+    // Upload/criar arquivo
+    $('#btn-upload').addEventListener('click', async () => {
+        try{
+            const { owner, repo, branch } = await ensureContext();
+            const fileInput = $('#upload-file');
+            const relPath = $('#upload-path').value.trim();
+            if(!fileInput.files || !fileInput.files[0]) throw new Error('Selecione um arquivo.');
+            if(!relPath) throw new Error('Informe o caminho dentro de cstrike/.');
+            if(!relPath || relPath.includes('..') || relPath.startsWith('/') || relPath.startsWith('cstrike/') === false) throw new Error('O caminho deve começar com cstrike/ e não pode conter ..');
+
+            const file = fileInput.files[0];
+            const content = await file.arrayBuffer();
+            const base64 = btoa(String.fromCharCode(...new Uint8Array(content)));
+
+            const existingSha = await getShaForPath(owner, repo, branch || 'main', relPath);
+            const body = {
+                message: existingSha ? `chore: update ${relPath}` : `feat: add ${relPath}`,
+                content: base64,
+                branch: branch || undefined,
+                sha: existingSha || undefined
+            };
+            await githubRequest('PUT', `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(relPath)}`, body);
+            alert('Upload concluído.');
+            loadRepo(owner, repo, branch);
+        }catch(e){ alert(e.message || e); }
+    });
+
+    // Criar pasta (GitHub não tem diretório vazio: criamos .keep)
+    $('#btn-mkdir').addEventListener('click', async () => {
+        try{
+            const { owner, repo, branch } = await ensureContext();
+            const p = $('#mkdir-path').value.trim();
+            if(!p) throw new Error('Informe o caminho da pasta.');
+            const dir = p.replace(/^\/+|\/+$/g, '');
+            const rel = dir.startsWith('cstrike/') ? dir : `cstrike/${dir}`;
+            if(rel.includes('..')) throw new Error('Caminho inválido.');
+            const target = `${rel}/.keep`;
+            const body = { message: `feat: mkdir ${rel}`, content: btoa('keep'), branch: branch || undefined };
+            await githubRequest('PUT', `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(target)}`, body);
+            alert('Pasta criada.');
+            loadRepo(owner, repo, branch);
+        }catch(e){ alert(e.message || e); }
+    });
+
+    // Deletar pasta recursivamente
+    $('#btn-rmdir').addEventListener('click', async () => {
+        try{
+            const { owner, repo, branch } = await ensureContext();
+            const p = $('#rmdir-path').value.trim();
+            if(!p) throw new Error('Informe o caminho da pasta para apagar.');
+            const dir = p.replace(/^\/+|\/+$/g, '');
+            const rel = dir.startsWith('cstrike/') ? dir : `cstrike/${dir}`;
+            if(rel.includes('..')) throw new Error('Caminho inválido.');
+
+            // Listar árvore e deletar blobs
+            const { files } = await listAllFiles(owner, repo, branch);
+            const toDelete = files.filter(f => f.path.startsWith(rel + '/'));
+            for(const f of toDelete){
+                const sha = await getShaForPath(owner, repo, branch || 'main', f.path);
+                if(!sha) continue;
+                await githubRequest('DELETE', `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(f.path)}`,
+                    { message: `chore: delete ${f.path}`, sha, branch: branch || undefined });
+            }
+
+            // Tentar deletar marcador .keep se existir
+            const keepSha = await getShaForPath(owner, repo, branch || 'main', `${rel}/.keep`);
+            if(keepSha){
+                await githubRequest('DELETE', `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(rel + '/.keep')}`,
+                    { message: `chore: delete ${rel}/.keep`, sha: keepSha, branch: branch || undefined });
+            }
+
+            alert('Pasta apagada.');
+            loadRepo(owner, repo, branch);
+        }catch(e){ alert(e.message || e); }
+    });
+
+    // Renomear: copiar para novo e apagar antigo (para arquivos). Para pastas, mover recursivamente
+    $('#btn-rename').addEventListener('click', async () => {
+        try{
+            const { owner, repo, branch } = await ensureContext();
+            const from = $('#rename-from').value.trim();
+            const to = $('#rename-to').value.trim();
+            if(!from || !to) throw new Error('Preencha os dois caminhos.');
+            const fromRel = from.startsWith('cstrike/') ? from : `cstrike/${from}`;
+            const toRel = to.startsWith('cstrike/') ? to : `cstrike/${to}`;
+            if(fromRel.includes('..') || toRel.includes('..')) throw new Error('Caminhos inválidos.');
+
+            // Se for pasta: mover recursivamente
+            const isFolder = fromRel.endsWith('/');
+            if(isFolder){
+                const { files } = await listAllFiles(owner, repo, branch);
+                const moves = files.filter(f => f.path.startsWith(fromRel));
+                for(const f of moves){
+                    const newPath = f.path.replace(fromRel, toRel.replace(/\/$/, '/') );
+                    const sha = await getShaForPath(owner, repo, branch || 'main', f.path);
+                    if(!sha) continue;
+                    // Pegar conteúdo do blob
+                    const blob = await fetchJSON(`https://api.github.com/repos/${owner}/${repo}/git/blobs/${sha}`);
+                    // Criar no novo local
+                    await githubRequest('PUT', `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(newPath)}`,
+                        { message: `chore: move ${f.path} -> ${newPath}`, content: blob.content, branch: branch || undefined });
+                    // Remover antigo
+                    await githubRequest('DELETE', `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(f.path)}`,
+                        { message: `chore: delete ${f.path}`, sha, branch: branch || undefined });
+                }
+            }else{
+                const sha = await getShaForPath(owner, repo, branch || 'main', fromRel);
+                if(!sha) throw new Error('Origem não encontrada.');
+                const blob = await fetchJSON(`https://api.github.com/repos/${owner}/${repo}/git/blobs/${sha}`);
+                await githubRequest('PUT', `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(toRel)}`,
+                    { message: `chore: move ${fromRel} -> ${toRel}`, content: blob.content, branch: branch || undefined });
+                await githubRequest('DELETE', `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(fromRel)}`,
+                    { message: `chore: delete ${fromRel}`, sha, branch: branch || undefined });
+            }
+
+            alert('Renomeação concluída.');
+            loadRepo(owner, repo, branch);
+        }catch(e){ alert(e.message || e); }
+    });
 });
 
 

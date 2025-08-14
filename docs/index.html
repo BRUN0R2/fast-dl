@@ -34,15 +34,16 @@
                 <div>
                     <h2 id="repo-title"></h2>
                     <p id="repo-desc" class="muted"></p>
+                    <p class="small muted">Exibindo somente a pasta <code>cstrike/</code> deste repositório.</p>
                 </div>
                 <div class="inline-actions">
-                    <a id="repo-link" class="btn ghost" href="#" target="_blank" rel="noopener">Abrir no GitHub</a>
+                    <a id="repo-link" class="btn ghost" href="#" target="_blank" rel="noopener">Abrir cstrike/ no GitHub</a>
                 </div>
             </div>
 
             <div class="meter">
                 <div class="meter-top">
-                    <span>Uso de espaço do repositório (aprox.)</span>
+                    <span>Uso de espaço da pasta cstrike/ (aprox.)</span>
                     <span id="size-label">0 / 1 GB</span>
                 </div>
                 <div class="bar">
@@ -50,6 +51,7 @@
                 </div>
                 <div class="meter-legend">
                     <span class="muted">Limite recomendado: ~1 GB por repositório (GitHub Free)</span>
+                    <span class="muted" style="float:right">Restante: <strong id="size-remaining">-</strong></span>
                 </div>
             </div>
 
@@ -98,6 +100,59 @@
             <div id="loading" class="loading">Carregando arquivos...</div>
             <div id="error" class="error" hidden></div>
             <ul id="tree" class="tree" role="tree"></ul>
+        </section>
+
+        <section id="admin-panel" hidden>
+            <div class="meter" style="margin-top:18px">
+                <div class="meter-top">
+                    <span>Administração (somente dono)</span>
+                    <span id="auth-status" class="muted">Desconectado</span>
+                </div>
+                <div class="repo-form" style="margin-top:8px">
+                    <input id="token" type="password" placeholder="Token do GitHub (escopo: repo)" />
+                    <button id="btn-auth" type="button">Entrar</button>
+                    <button id="btn-logout" type="button" class="btn ghost">Sair</button>
+                </div>
+                <p class="small muted">O token nunca é enviado a terceiros e fica apenas no seu navegador (localStorage). Crie em Settings → Developer settings → Personal access tokens.</p>
+            </div>
+
+            <div class="controls" style="margin-top:12px">
+                <div class="filters" style="flex-wrap:wrap">
+                    <div class="stat" style="min-width:280px">
+                        <div class="stat-label">Upload de arquivo para <code>cstrike/</code></div>
+                        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+                            <input id="upload-path" type="text" placeholder="caminho dentro de cstrike/ (ex: addons/novo.sma)" style="flex:1; min-width:240px" />
+                            <input id="upload-file" type="file" />
+                            <button id="btn-upload" type="button">Enviar</button>
+                        </div>
+                    </div>
+
+                    <div class="stat" style="min-width:280px">
+                        <div class="stat-label">Criar pasta em <code>cstrike/</code></div>
+                        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+                            <input id="mkdir-path" type="text" placeholder="nova/pasta" />
+                            <button id="btn-mkdir" type="button">Criar</button>
+                        </div>
+                    </div>
+
+                    <div class="stat" style="min-width:280px">
+                        <div class="stat-label">Deletar pasta de <code>cstrike/</code> (recursivo)</div>
+                        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+                            <input id="rmdir-path" type="text" placeholder="pasta/para/apagar" />
+                            <button id="btn-rmdir" type="button" style="background:#7f1d1d;border-color:#7f1d1d">Apagar</button>
+                        </div>
+                    </div>
+
+                    <div class="stat" style="min-width:280px">
+                        <div class="stat-label">Renomear (arquivo ou pasta) em <code>cstrike/</code></div>
+                        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+                            <input id="rename-from" type="text" placeholder="antigo/caminho.ext ou pasta/antiga" />
+                            <input id="rename-to" type="text" placeholder="novo/caminho.ext ou pasta/nova" />
+                            <button id="btn-rename" type="button">Renomear</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 
