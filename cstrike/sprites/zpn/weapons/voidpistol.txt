@@ -1,5 +1,0 @@
-4
-weapon		640 zpn/weapons/voidpistol/640hud198	0	90	170	45
-weapon_s	640 zpn/weapons/voidpistol/640hud198	0	135	170	45
-ammo		640 zpn/weapons/voidpistol/640hud39	25	231	24	24
-ammo2		640 zpn/weapons/voidpistol/640hud39	49	231	24	24
