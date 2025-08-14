@@ -1,4 +1,0 @@
-3
-weapon		640 zpn/weapons/gungnir/640hud185	0	90	170	45
-weapon_s	640 zpn/weapons/gungnir/640hud185	0	135	170	45
-ammo		640 zpn/weapons/gungnir/640hud36	1	231	24	24
