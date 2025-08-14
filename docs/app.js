@@ -476,6 +476,17 @@ document.addEventListener('DOMContentLoaded', () => {
         $$('#tree input[type="checkbox"]').forEach(cb => { cb.checked = false; });
         updateSelectionToolbar();
     });
+    $('#btn-select-all').addEventListener('click', () => {
+        // Seleciona todos os itens do cache (toda a árvore cstrike)
+        selectedPaths.clear();
+        for(const f of repoCache.files){ selectedPaths.add(f.path); }
+        // Atualiza UI visível
+        $$('#tree li').forEach(li => {
+            const path = li.dataset.path; const cb = li.querySelector('input[type="checkbox"]');
+            if(path && cb){ cb.checked = true; }
+        });
+        updateSelectionToolbar();
+    });
     $('#btn-delete-selected').addEventListener('click', async () => {
         try{
             if(selectedPaths.size === 0) return;
