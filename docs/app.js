@@ -3,9 +3,9 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 const ONE_GB = 1024 * 1024 * 1024; // bytes
 // Opcional: defina o repo padrão e esconda o formulário
-const DEFAULT_OWNER = '';
-const DEFAULT_REPO = '';
-const DEFAULT_BRANCH = '';
+const DEFAULT_OWNER = 'BRUN0R2';
+const DEFAULT_REPO = 'fast-dl';
+const DEFAULT_BRANCH = 'main';
 
 async function fetchJSON(url, init){
     const res = await fetch(url, init);
