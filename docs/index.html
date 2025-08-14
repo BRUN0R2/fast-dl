@@ -163,6 +163,7 @@
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s;
+            will-change: transform;
         }
 
         .btn-primary {
@@ -240,6 +241,7 @@
             background: var(--accent-color);
             width: 0%;
             transition: width 0.3s;
+            will-change: width;
         }
 
         .progress-text {
@@ -247,6 +249,111 @@
             font-size: 14px;
             text-align: center;
             color: var(--text-color);
+        }
+
+        /* Storage Widget */
+        .storage-widget {
+            margin: 0 20px 10px 20px;
+            padding: 12px 14px;
+            background: var(--upload-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+        }
+
+        .storage-header {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .storage-bar {
+            width: 100%;
+            height: 10px;
+            background: var(--progress-bg);
+            border-radius: 6px;
+            overflow: visible;
+            position: relative;
+        }
+
+        .storage-bar-fill {
+            height: 100%;
+            width: 0%;
+            /* Camada 1: listras que se movem */
+            /* Camada 2: gradiente colorido que desliza */
+            background-image:
+                linear-gradient(90deg,
+                    rgba(255,255,255,0.25) 0%,
+                    rgba(255,255,255,0.05) 20%,
+                    rgba(255,255,255,0.25) 40%,
+                    rgba(255,255,255,0.05) 60%,
+                    rgba(255,255,255,0.25) 80%,
+                    rgba(255,255,255,0.05) 100%),
+                linear-gradient(135deg, #8a2be2, #ff00ff, #00f6ff, #39ff14, #00aaff, #8a2be2);
+            background-size: 200% 100%, 200% 100%;
+            background-position: 0% 0%, 0% 0%;
+            transition: width 0.35s ease;
+            animation: manaFlow 2.2s linear infinite, manaHue 4.2s linear infinite, manaGlow 1.6s ease-in-out infinite alternate;
+            box-shadow: 0 0 16px rgba(114, 239, 221, 0.45), inset 0 0 10px rgba(255,255,255,0.18);
+            will-change: width, background-position, filter, box-shadow;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Efeitos de "poder" saindo da barra */
+        .storage-sparks {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            overflow: visible;
+        }
+
+        .spark {
+            position: absolute;
+            bottom: 0;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 10px currentColor, 0 0 18px currentColor;
+            opacity: 0.95;
+            transform: translate3d(0, 0, 0) scale(1);
+            animation: sparkRise 1.2s ease-out forwards, sparkFlicker 0.6s ease-in-out infinite alternate;
+            will-change: transform, opacity, filter;
+        }
+
+        @keyframes sparkRise {
+            0% { transform: translate3d(0, 0, 0) scale(0.9); opacity: 0.95; }
+            60% { transform: translate3d(var(--drift, 6px), calc(var(--rise, -28px) * 0.5), 0) scale(1); opacity: 0.85; }
+            100% { transform: translate3d(var(--drift, 10px), var(--rise, -28px), 0) scale(0.85); opacity: 0; }
+        }
+
+        @keyframes sparkFlicker {
+            0% { filter: brightness(1) saturate(1.2); }
+            100% { filter: brightness(1.35) saturate(1.6); }
+        }
+
+        .storage-text {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        @keyframes manaFlow {
+            0% { background-position: 0% 0%, 0% 0%; }
+            100% { background-position: 200% 0%, 200% 0%; }
+        }
+
+        @keyframes manaHue {
+            0% { filter: hue-rotate(0deg) saturate(1.6); }
+            100% { filter: hue-rotate(360deg) saturate(1.6); }
+        }
+
+        @keyframes manaGlow {
+            0% { box-shadow: 0 0 10px rgba(114, 239, 221, 0.28), inset 0 0 6px rgba(255,255,255,0.12); }
+            100% { box-shadow: 0 0 16px rgba(114, 239, 221, 0.45), inset 0 0 10px rgba(255,255,255,0.22); }
         }
 
         /* File Grid */
@@ -272,6 +379,7 @@
             background: var(--file-bg);
             border: 2px solid transparent;
             color: var(--text-color);
+            will-change: transform, box-shadow;
         }
 
         .file-item:hover {
@@ -399,6 +507,7 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             color: var(--accent-color);
+            will-change: transform, box-shadow, border-color;
         }
 
         .theme-toggle:hover {
@@ -417,6 +526,467 @@
             box-shadow: 0 6px 20px var(--accent-color);
             background: var(--selected-bg);
         }
+
+        /* Custom Confirmation Modal */
+        .confirmation-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(5px);
+            will-change: opacity, visibility;
+        }
+
+        .confirmation-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .confirmation-modal {
+            background: var(--container-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.8) translateY(50px);
+            transition: all 0.25s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            will-change: transform;
+        }
+
+        .confirmation-overlay.show .confirmation-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .confirmation-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            background: var(--danger-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); }
+        }
+
+        .confirmation-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 10px;
+        }
+
+        .confirmation-message {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .confirmation-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .confirmation-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 100px;
+        }
+
+        .confirmation-btn.confirm {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .confirmation-btn.confirm:hover {
+            background: #ff0000;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 68, 68, 0.4);
+        }
+
+        .confirmation-btn.cancel {
+            background: var(--text-secondary);
+            color: white;
+        }
+
+        .confirmation-btn.cancel:hover {
+            background: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(108, 117, 125, 0.3);
+        }
+
+        /* Success Animation */
+        .success-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            will-change: opacity, visibility;
+        }
+
+        .success-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .success-modal {
+            background: var(--container-bg);
+            border: 1.5px solid var(--success-color);
+            border-radius: 14px;
+            padding: 24px 22px;
+            text-align: center;
+            transform: translateY(10px) scale(0.97);
+            opacity: 0;
+            transition: transform 0.25s ease, opacity 0.25s ease, box-shadow 0.25s ease;
+            box-shadow: 0 12px 32px rgba(50, 205, 50, 0.25);
+            max-width: 360px;
+            width: 90%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .success-overlay.show .success-modal {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        .success-modal::before { display: none; }
+
+        @keyframes successShine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .success-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 12px;
+            background: linear-gradient(135deg, var(--success-color), #28a745);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 6px 18px rgba(50, 205, 50, 0.35);
+        }
+
+        @keyframes successBounce {
+            0% { 
+                transform: scale(0) rotate(180deg); 
+                opacity: 0; 
+            }
+            60% { 
+                transform: scale(1.2) rotate(0deg); 
+                opacity: 1; 
+            }
+            100% { 
+                transform: scale(1) rotate(0deg); 
+                opacity: 1; 
+            }
+        }
+
+        .success-icon::before { display: none; }
+
+        @keyframes successRing {
+            0% { 
+                transform: scale(0.8); 
+                opacity: 1; 
+            }
+            100% { 
+                transform: scale(1.3); 
+                opacity: 0; 
+            }
+        }
+
+        .success-checkmark {
+            position: relative;
+            display: inline-block;
+        }
+
+        .success-checkmark::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 28px;
+            border-right: 3px solid white;
+            border-bottom: 3px solid white;
+            transform: rotate(45deg);
+            top: -2px;
+            left: 12px;
+            animation: checkmarkDraw 0.4s ease-out 0.4s both;
+            opacity: 0;
+        }
+
+        @keyframes checkmarkDraw {
+            0% { 
+                width: 0; 
+                height: 0; 
+                opacity: 1; 
+            }
+            50% { 
+                width: 0; 
+                height: 28px; 
+                opacity: 1; 
+            }
+            100% { 
+                width: 16px; 
+                height: 28px; 
+                opacity: 1; 
+            }
+        }
+
+        .success-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--success-color);
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .success-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes successSlideUp {
+            0% { 
+                transform: translateY(20px); 
+                opacity: 0; 
+            }
+            100% { 
+                transform: translateY(0); 
+                opacity: 1; 
+            }
+        }
+
+        .success-particles { display: none; }
+
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+            animation: particleFloat 1.5s ease-out forwards;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-delay: 0.5s; }
+        .particle:nth-child(2) { left: 20%; animation-delay: 0.6s; }
+        .particle:nth-child(3) { left: 30%; animation-delay: 0.7s; }
+        .particle:nth-child(4) { left: 70%; animation-delay: 0.8s; }
+        .particle:nth-child(5) { left: 80%; animation-delay: 0.9s; }
+        .particle:nth-child(6) { left: 90%; animation-delay: 1s; }
+
+        /* Warning Modal */
+        .warning-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            will-change: opacity, visibility;
+        }
+
+        .warning-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .warning-modal {
+            background: var(--container-bg);
+            border: 3px solid var(--accent-color);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            transform: scale(0.6) translateY(20px);
+            transition: all 0.25s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 15px 30px rgba(255, 165, 0, 0.3);
+            max-width: 350px;
+            width: 90%;
+            position: relative;
+            will-change: transform;
+        }
+
+        [data-theme="light"] .warning-modal {
+            border-color: #ff6b35;
+            box-shadow: 0 20px 40px rgba(255, 107, 53, 0.3);
+        }
+
+        .warning-overlay.show .warning-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .warning-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            animation: warningShake 0.4s ease-in-out;
+            box-shadow: 0 8px 20px rgba(255, 165, 0, 0.4);
+            will-change: transform;
+        }
+
+        [data-theme="light"] .warning-icon {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            box-shadow: 0 8px 20px rgba(255, 107, 53, 0.4);
+        }
+
+        @keyframes warningShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px) rotate(-1deg); }
+            75% { transform: translateX(6px) rotate(1deg); }
+        }
+
+        .warning-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        [data-theme="light"] .warning-title {
+            color: #ff6b35;
+        }
+
+        .warning-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Confirm Feedback (simples, igual ao aviso, com shake) */
+        .confirm-feedback-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            will-change: opacity, visibility;
+        }
+
+        .confirm-feedback-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .confirm-feedback-modal {
+            background: var(--container-bg);
+            border: 3px solid var(--accent-color);
+            border-radius: 16px;
+            padding: 26px 30px;
+            text-align: center;
+            transform: scale(0.95) translateY(6px);
+            transition: all 0.2s ease;
+            box-shadow: 0 15px 30px rgba(255, 165, 0, 0.3);
+            max-width: 330px;
+            width: 88%;
+            position: relative;
+            will-change: transform;
+            animation: warningShake 0.4s ease-in-out;
+        }
+
+        .confirm-feedback-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 12px;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 8px 20px rgba(255, 165, 0, 0.35);
+            will-change: transform;
+        }
+
+        .confirm-feedback-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 6px;
+        }
+
+        .confirm-feedback-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
@@ -430,11 +1000,7 @@
         <div class="sidebar">
             <div class="logo">🎮 CS 1.6 Manager</div>
             <ul class="folder-tree" id="folderTree">
-                <li class="folder-item active" data-path="/">📁 Root</li>
-                <li class="folder-item" data-path="/maps">🗺️ Maps</li>
-                <li class="folder-item" data-path="/skins">🎨 Skins</li>
-                <li class="folder-item" data-path="/sounds">🔊 Sounds</li>
-                <li class="folder-item" data-path="/configs">⚙️ Configs</li>
+                <li class="folder-item active" data-path="/cstrike">📁 cstrike</li>
             </ul>
         </div>
 
@@ -442,7 +1008,7 @@
         <div class="main-content">
             <!-- Breadcrumb -->
             <div class="breadcrumb" id="breadcrumb">
-                <span class="breadcrumb-item" data-path="/">Home</span>
+                <span class="breadcrumb-item" data-path="/">cstrike</span>
             </div>
 
             <!-- Toolbar -->
@@ -472,6 +1038,19 @@
                 <div class="progress-text" id="progressText">Enviando arquivos...</div>
             </div>
 
+            <!-- Storage Widget -->
+            <div class="storage-widget" id="storageWidget">
+                <div class="storage-header">Armazenamento</div>
+                <div class="storage-bar">
+                    <div class="storage-sparks" id="storageSparks"></div>
+                    <div class="storage-bar-fill" id="storageFill"></div>
+                </div>
+                <div class="storage-text">
+                    <span id="storageTextLeft">Usado:</span>
+                    <span id="storageTextRight">0 de 1 GB (0%)</span>
+                </div>
+            </div>
+
             <!-- File Grid -->
             <div class="file-grid" id="fileGrid">
                 <!-- Files will be loaded here -->
@@ -484,38 +1063,60 @@
         </div>
     </div>
 
+    <!-- Custom Confirmation Modal -->
+    <div class="confirmation-overlay" id="confirmationOverlay">
+        <div class="confirmation-modal">
+            <div class="confirmation-icon">
+                🗑️
+            </div>
+            <div class="confirmation-title">Confirmar Exclusão</div>
+            <div class="confirmation-message" id="confirmationMessage">
+                Deseja realmente excluir os arquivos selecionados?
+            </div>
+            <div class="confirmation-buttons">
+                <button class="confirmation-btn cancel" id="cancelBtn">Cancelar</button>
+                <button class="confirmation-btn confirm" id="confirmBtn">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="success-overlay" id="successOverlay">
+        <div class="success-modal">
+            <div class="success-particles">
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+            </div>
+            <div class="success-icon">
+                <div class="success-checkmark"></div>
+            </div>
+            <div class="success-title">Sucesso!</div>
+            <div class="success-message" id="successMessage">
+                Arquivos excluídos com sucesso!
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Feedback (simples) -->
+    <div class="confirm-feedback-overlay" id="confirmFeedbackOverlay">
+        <div class="confirm-feedback-modal">
+            <div class="confirm-feedback-icon" id="confirmFeedbackIcon">🗑️</div>
+            <div class="confirm-feedback-title">Confirmado</div>
+            <div class="confirm-feedback-message" id="confirmFeedbackMessage">Processando...</div>
+        </div>
+    </div>
+
     <script>
         // Estado da aplicação
-        let currentPath = '/';
+        let currentPath = '/cstrike';
         let selectedFiles = new Set();
         let currentTheme = 'light';
-        let allFiles = {
-            '/': [
-                { name: 'maps', type: 'folder' },
-                { name: 'skins', type: 'folder' },
-                { name: 'sounds', type: 'folder' },
-                { name: 'configs', type: 'folder' },
-                { name: 'autoexec.cfg', type: 'file', extension: 'cfg' },
-                { name: 'config.cfg', type: 'file', extension: 'cfg' }
-            ],
-            '/maps': [
-                { name: 'de_dust2.bsp', type: 'file', extension: 'bsp' },
-                { name: 'de_inferno.bsp', type: 'file', extension: 'bsp' },
-                { name: 'cs_office.bsp', type: 'file', extension: 'bsp' }
-            ],
-            '/skins': [
-                { name: 'ak47_skin.mdl', type: 'file', extension: 'mdl' },
-                { name: 'knife_skin.mdl', type: 'file', extension: 'mdl' }
-            ],
-            '/sounds': [
-                { name: 'headshot.wav', type: 'file', extension: 'wav' },
-                { name: 'bomb_planted.wav', type: 'file', extension: 'wav' }
-            ],
-            '/configs': [
-                { name: 'fps_config.cfg', type: 'file', extension: 'cfg' },
-                { name: 'pro_settings.cfg', type: 'file', extension: 'cfg' }
-            ]
-        };
+        // Mock local somente para uploads feitos na sessão
+        let allFiles = {};
 
         // Elementos DOM
         const fileGrid = document.getElementById('fileGrid');
@@ -528,6 +1129,27 @@
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
         const themeToggle = document.getElementById('themeToggle');
+        const confirmationOverlay = document.getElementById('confirmationOverlay');
+        const confirmationMessage = document.getElementById('confirmationMessage');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const successOverlay = document.getElementById('successOverlay');
+        const successMessage = document.getElementById('successMessage');
+        const confirmFeedbackOverlay = document.getElementById('confirmFeedbackOverlay');
+        const confirmFeedbackMessage = document.getElementById('confirmFeedbackMessage');
+        const confirmFeedbackIcon = document.getElementById('confirmFeedbackIcon');
+        const storageFill = document.getElementById('storageFill');
+        const storageTextRight = document.getElementById('storageTextRight');
+        const storageSparks = document.getElementById('storageSparks');
+        
+        // Chaves de tema
+        const THEME_KEY = 'cs16-theme';
+        const THEME_SOURCE_KEY = 'cs16-theme-source'; // 'system' | 'manual'
+        
+        // Armazenamento
+        const STORAGE_CAPACITY_BYTES = 1024 * 1024 * 1024; // 1 GB (limite típico do GitHub Pages)
+        const ENABLE_GITHUB_REPO_SIZE = true; // usar tamanho do repositório
+        const GITHUB_REPO = 'BRUN0R2/fast-dl'; // Repositório configurado
 
         // Função para detectar preferência do sistema
         function getSystemTheme() {
@@ -553,27 +1175,248 @@
 
         // Inicializar tema
         function initTheme() {
-            // Verificar se há preferência salva
-            const savedTheme = localStorage.getItem('cs16-theme');
-            
-            if (savedTheme) {
+            // Verificar se há preferência salva e a fonte
+            const savedTheme = localStorage.getItem(THEME_KEY);
+            const savedSource = localStorage.getItem(THEME_SOURCE_KEY) || 'system';
+
+            if (savedTheme && savedSource === 'manual') {
                 applyTheme(savedTheme);
             } else {
-                // Usar preferência do sistema
+                // Usar preferência do sistema por padrão
                 applyTheme(getSystemTheme());
+                localStorage.setItem(THEME_SOURCE_KEY, 'system');
             }
         }
 
-        // Event listener para mudanças na preferência do sistema
-        window.matchMedia('(prefers-color-scheme: dark)').addListener((e) => {
-            // Só aplicar automaticamente se não há preferência salva
-            if (!localStorage.getItem('cs16-theme')) {
-                applyTheme(e.matches ? 'dark' : 'light');
-            }
-        });
+        // Função para mostrar confirmação customizada (sem shake ao abrir)
+        function showConfirmation(message, onConfirm) {
+            confirmationMessage.textContent = message;
+            confirmationOverlay.classList.add('show');
+            
+            // Event listeners temporários
+            const handleConfirm = () => {
+                // Evitar cliques múltiplos e garantir animação suave
+                confirmBtn.disabled = true;
+                cancelBtn.disabled = true;
 
-        // Event listener para o botão de tema
-        themeToggle.addEventListener('click', toggleTheme);
+                const run = () => {
+                    // Mostra feedback simples com shake enquanto fecha o modal
+                    showConfirmFeedback('Excluindo...', '🗑️');
+                    const done = () => {
+                        confirmBtn.disabled = false;
+                        cancelBtn.disabled = false;
+                        cleanup();
+                        onConfirm();
+                    };
+
+                    const onEnd = (ev) => {
+                        if (ev && ev.target !== confirmationOverlay) return;
+                        clearTimeout(fallbackTimeout);
+                        confirmationOverlay.removeEventListener('transitionend', onEnd);
+                        done();
+                    };
+
+                    const fallbackTimeout = setTimeout(onEnd, 300);
+                    confirmationOverlay.addEventListener('transitionend', onEnd);
+                    hideConfirmation();
+                };
+
+                if (window.requestAnimationFrame) {
+                    requestAnimationFrame(() => {
+                        if ('requestIdleCallback' in window) {
+                            requestIdleCallback(run, { timeout: 200 });
+                        } else {
+                            run();
+                        }
+                    });
+                } else {
+                    run();
+                }
+            };
+            
+            const handleCancel = () => {
+                hideConfirmation();
+                cleanup();
+            };
+            
+            const handleEscape = (e) => {
+                if (e.key === 'Escape') {
+                    handleCancel();
+                }
+            };
+            
+            const cleanup = () => {
+                confirmBtn.removeEventListener('click', handleConfirm);
+                cancelBtn.removeEventListener('click', handleCancel);
+                document.removeEventListener('keydown', handleEscape);
+            };
+            
+            confirmBtn.addEventListener('click', handleConfirm);
+            cancelBtn.addEventListener('click', handleCancel);
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        // Função para esconder confirmação
+        function hideConfirmation() {
+            confirmationOverlay.classList.remove('show');
+        }
+
+        // Função para mostrar sucesso
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successOverlay.classList.add('show');
+            
+            // Auto-hide após 1.3 segundos (bem mais rápido)
+            setTimeout(() => {
+                successOverlay.classList.remove('show');
+            }, 1300);
+        }
+
+        // Feedback simples de confirmação com shake (igual ao aviso)
+        function showConfirmFeedback(message, icon = '🗑️') {
+            if (!confirmFeedbackOverlay) return;
+            confirmFeedbackMessage.textContent = message;
+            confirmFeedbackIcon.textContent = icon;
+            confirmFeedbackOverlay.classList.add('show');
+
+            // Reiniciar animação do modal
+            const modal = confirmFeedbackOverlay.querySelector('.confirm-feedback-modal');
+            if (modal) {
+                modal.style.animation = 'none';
+                // reflow
+                void modal.offsetWidth;
+                modal.style.animation = '';
+            }
+
+            // Esconder rapidamente como o aviso
+            setTimeout(() => {
+                confirmFeedbackOverlay.classList.remove('show');
+            }, 900);
+        }
+
+        // Utils armazenamento
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            const value = bytes / Math.pow(k, i);
+            return `${value.toFixed(value >= 100 || i === 0 ? 0 : value >= 10 ? 1 : 2)} ${sizes[i]}`;
+        }
+
+        function getBarColor(percent) {
+            // Cor controlada por animação, mantemos API por compatibilidade
+            if (percent < 60) return getComputedStyle(document.documentElement).getPropertyValue('--success-color') || '#28a745';
+            if (percent < 85) return getComputedStyle(document.documentElement).getPropertyValue('--accent-color') || '#6c757d';
+            return getComputedStyle(document.documentElement).getPropertyValue('--danger-color') || '#dc3545';
+        }
+
+        function sumAllFilesBytes() {
+            let total = 0;
+            Object.values(allFiles).forEach(items => {
+                (items || []).forEach(item => {
+                    if (item && item.type === 'file' && typeof item.size === 'number' && !isNaN(item.size)) {
+                        total += item.size;
+                    }
+                });
+            });
+            return total;
+        }
+
+        async function fetchGithubRepoSizeBytes() {
+            if (!ENABLE_GITHUB_REPO_SIZE || !GITHUB_REPO) return null;
+            try {
+                const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}`);
+                if (!res.ok) return null;
+                const data = await res.json();
+                if (typeof data.size === 'number') {
+                    return data.size * 1024; // API retorna em KB
+                }
+            } catch (e) {
+                // Silenciar erros de rede/limite
+            }
+            return null;
+        }
+
+        async function updateStorageBar() {
+            if (!storageFill || !storageTextRight) return;
+            let usedBytes = sumAllFilesBytes();
+
+            // Se não houver arquivos locais e habilitado GitHub, tentar usar o tamanho do repo
+            if (usedBytes === 0) {
+                const repoBytes = await fetchGithubRepoSizeBytes();
+                if (typeof repoBytes === 'number') usedBytes = repoBytes;
+            }
+
+            const capacity = STORAGE_CAPACITY_BYTES;
+            const percent = Math.max(0, Math.min(100, (usedBytes / capacity) * 100));
+            storageFill.style.width = percent + '%';
+            // A cor é dinâmica via animação CSS; opcionalmente poderíamos ajustar brilho/saturação aqui
+            storageTextRight.textContent = `${formatBytes(usedBytes)} de ${formatBytes(capacity)} (${percent.toFixed(0)}%)`;
+
+            // Garantir que os efeitos estejam ativos (cadência constante)
+            refreshSparks();
+        }
+
+        // Sistema de "poderzinhos" saindo da barra (cadência e densidade constantes)
+        let sparkTimer = null;
+        function refreshSparks() {
+            if (!storageSparks) return;
+            if (sparkTimer) return; // já ativo
+
+            const FIXED_INTERVAL_MS = 200;
+            const FIXED_COUNT = 1;
+
+            sparkTimer = setInterval(() => {
+                const barRect = storageSparks.getBoundingClientRect();
+                const spawnWidth = Math.max(0, barRect.width - 8);
+
+                for (let i = 0; i < FIXED_COUNT; i++) {
+                    const x = Math.random() * (spawnWidth <= 0 ? 0 : spawnWidth);
+                    const spark = document.createElement('div');
+                    spark.className = 'spark';
+
+                    const palette = ['#ff00ff', '#39ff14', '#00f6ff', '#ffb800', '#ff006e'];
+                    const color = palette[Math.floor(Math.random() * palette.length)];
+                    spark.style.color = color;
+                    spark.style.left = `${x}px`;
+                    spark.style.setProperty('--drift', `${(Math.random() * 34 - 16).toFixed(0)}px`);
+                    spark.style.setProperty('--rise', `-${(24 + Math.random() * 32).toFixed(0)}px`);
+
+                    storageSparks.appendChild(spark);
+
+                    setTimeout(() => {
+                        if (spark && spark.parentNode) spark.parentNode.removeChild(spark);
+                    }, 1400);
+                }
+            }, FIXED_INTERVAL_MS);
+        }
+
+        // Função para mostrar aviso (laranja/vermelho)
+        function showWarning(message) {
+            // Criar overlay de aviso temporário
+            const warningOverlay = document.createElement('div');
+            warningOverlay.className = 'warning-overlay show';
+            warningOverlay.innerHTML = `
+                <div class="warning-modal">
+                    <div class="warning-icon">
+                        ⚠️
+                    </div>
+                    <div class="warning-title">Atenção!</div>
+                    <div class="warning-message">${message}</div>
+                </div>
+            `;
+            
+            document.body.appendChild(warningOverlay);
+            
+            // Auto-hide após 0.9 segundos (super rápido)
+            setTimeout(() => {
+                warningOverlay.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(warningOverlay);
+                }, 200);
+            }, 900);
+        }
 
         // Função para obter ícone baseado no tipo de arquivo
         function getFileIcon(item) {
@@ -676,13 +1519,22 @@
         // Função para atualizar breadcrumb
         function updateBreadcrumb() {
             const pathParts = currentPath.split('/').filter(part => part !== '');
-            let breadcrumbHTML = '<span class="breadcrumb-item" data-path="/">Home</span>';
+            let breadcrumbHTML = '';
             
-            let currentPathBuild = '';
-            pathParts.forEach(part => {
-                currentPathBuild += '/' + part;
-                breadcrumbHTML += `<span class="breadcrumb-item" data-path="${currentPathBuild}">${part}</span>`;
-            });
+            // Se estamos na raiz (cstrike), mostra só cstrike
+            if (pathParts.length === 1 && pathParts[0] === 'cstrike') {
+                breadcrumbHTML = '<span class="breadcrumb-item" data-path="/cstrike">cstrike</span>';
+            } else {
+                // Se estamos em subpastas, mostra cstrike > subpasta
+                breadcrumbHTML = '<span class="breadcrumb-item" data-path="/cstrike">cstrike</span>';
+                let currentPathBuild = '/cstrike';
+                pathParts.forEach(part => {
+                    if (part !== 'cstrike') {
+                        currentPathBuild += '/' + part;
+                        breadcrumbHTML += `<span class="breadcrumb-item" data-path="${currentPathBuild}">${part}</span>`;
+                    }
+                });
+            }
             
             breadcrumb.innerHTML = breadcrumbHTML;
             
@@ -727,11 +1579,16 @@
         // Excluir arquivos selecionados
         document.getElementById('deleteBtn').addEventListener('click', () => {
             if (selectedFiles.size === 0) {
-                alert('Nenhum arquivo selecionado!');
+                showWarning('Nenhum arquivo selecionado!');
                 return;
             }
             
-            if (confirm(`Deseja excluir ${selectedFiles.size} arquivo(s)?`)) {
+            const count = selectedFiles.size;
+            const message = count === 1 
+                ? 'Deseja excluir 1 arquivo selecionado?'
+                : `Deseja excluir ${count} arquivos selecionados?`;
+            
+            showConfirmation(message, () => {
                 // Remover arquivos do array
                 if (allFiles[currentPath]) {
                     allFiles[currentPath] = allFiles[currentPath].filter(
@@ -742,8 +1599,13 @@
                 selectedFiles.clear();
                 renderFiles();
                 updateStatusBar();
-                alert('Arquivos excluídos com sucesso!');
-            }
+                updateStorageBar();
+                
+                const successMsg = count === 1 
+                    ? '1 arquivo excluído com sucesso!'
+                    : `${count} arquivos excluídos com sucesso!`;
+                showSuccess(successMsg);
+            });
         });
 
         // Drag and Drop
@@ -770,6 +1632,33 @@
             handleFiles(e.target.files);
         });
 
+        // Utilitário: buscar arquivos do GitHub (apenas pasta cstrike)
+        async function fetchGithubDir(path) {
+            // path deve começar com /cstrike
+            const base = path.startsWith('/') ? path.slice(1) : path;
+            if (!GITHUB_REPO) return [];
+            try {
+                const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${base}`);
+                if (!res.ok) return [];
+                const data = await res.json();
+                if (!Array.isArray(data)) return [];
+                return data.map(entry => ({
+                    name: entry.name,
+                    type: entry.type === 'dir' ? 'folder' : 'file',
+                    extension: entry.type === 'dir' ? undefined : (entry.name.split('.').pop() || '').toLowerCase(),
+                    size: typeof entry.size === 'number' ? entry.size : 0
+                }));
+            } catch (e) {
+                return [];
+            }
+        }
+
+        async function ensurePathLoaded(path) {
+            if (allFiles[path]) return;
+            const items = await fetchGithubDir(path);
+            allFiles[path] = items;
+        }
+
         // Função para processar upload de arquivos
         function handleFiles(files) {
             if (files.length === 0) return;
@@ -787,7 +1676,7 @@
                     setTimeout(() => {
                         progressContainer.style.display = 'none';
                         uploadArea.style.display = 'block';
-                        alert(`${total} arquivo(s) enviado(s) com sucesso!`);
+                        showSuccess(`${total} arquivo(s) enviado(s) com sucesso!`);
                         fileInput.value = '';
                     }, 500);
                     return;
@@ -804,7 +1693,8 @@
                 allFiles[currentPath].push({
                     name: file.name,
                     type: 'file',
-                    extension: extension
+                    extension: extension,
+                    size: file.size || 0
                 });
                 
                 uploaded++;
@@ -817,6 +1707,7 @@
                     uploadFile(index + 1);
                     if (index === files.length - 1) {
                         renderFiles();
+                        updateStorageBar();
                     }
                 }, 300 + Math.random() * 500);
             };
@@ -826,16 +1717,46 @@
 
         // Event listeners para sidebar
         document.querySelectorAll('.folder-item').forEach(item => {
-            item.addEventListener('click', () => {
-                navigateToFolder(item.getAttribute('data-path'));
+            item.addEventListener('click', async () => {
+                const target = item.getAttribute('data-path');
+                if (!target.startsWith('/cstrike')) return; // restringe à pasta cstrike
+                await ensurePathLoaded(target);
+                navigateToFolder(target);
             });
         });
 
+        // Listeners de tema
+        themeToggle.addEventListener('click', () => {
+            toggleTheme();
+            localStorage.setItem(THEME_SOURCE_KEY, 'manual');
+            localStorage.setItem(THEME_KEY, currentTheme);
+        });
+
+        const themeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const systemThemeListener = (e) => {
+            const source = localStorage.getItem(THEME_SOURCE_KEY) || 'system';
+            if (source === 'system') {
+                applyTheme(e.matches ? 'dark' : 'light');
+            }
+        };
+        if (themeMediaQuery.addEventListener) {
+            themeMediaQuery.addEventListener('change', systemThemeListener);
+        } else if (themeMediaQuery.addListener) {
+            themeMediaQuery.addListener(systemThemeListener);
+        }
+
         // Inicialização
         initTheme(); // Inicializar tema antes de tudo
-        renderFiles();
-        updateBreadcrumb();
-        updateStatusBar();
+        (async () => {
+            // Carregar conteúdo inicial da pasta cstrike
+            await ensurePathLoaded('/cstrike');
+            renderFiles();
+            updateBreadcrumb();
+            updateStatusBar();
+            updateStorageBar();
+            // Garantir partículas ativas desde o primeiro paint
+            refreshSparks();
+        })();
     </script>
 </body>
 </html>
