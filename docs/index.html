@@ -1,191 +1,841 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Arquivos CS 1.6 - GitHub Viewer</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-    <script>
-        window.ASSET_BUST = { owner: 'BRUN0R2', repo: 'fast-dl', branch: 'main' };
-        (function(){
-            const cfg = window.ASSET_BUST || {};
-            const owner = cfg.owner || 'BRUN0R2';
-            const repo = cfg.repo || 'fast-dl';
-            const branch = cfg.branch || 'main';
-            const head = document.getElementsByTagName('head')[0];
-            function inject(version){
-                const css = document.createElement('link');
-                css.rel = 'stylesheet';
-                css.href = 'styles.css?v=' + encodeURIComponent(version);
-                head.appendChild(css);
-                const js = document.createElement('script');
-                js.src = 'app.js?v=' + encodeURIComponent(version);
-                head.appendChild(js);
-            }
-            fetch('https://api.github.com/repos/' + owner + '/' + repo + '/commits?per_page=1')
-              .then(r => r.ok ? r.json() : Promise.reject())
-              .then(arr => Array.isArray(arr) && arr[0] && arr[0].sha ? arr[0].sha.substring(0,10) : String(Date.now()))
-              .catch(() => String(Date.now()))
-              .then(inject);
-        })();
-    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS 1.6 File Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* Theme Variables */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            --container-bg: rgba(255, 255, 255, 0.95);
+            --sidebar-bg: rgba(248, 249, 250, 0.9);
+            --toolbar-bg: rgba(255, 255, 255, 0.9);
+            --text-color: #333;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --hover-bg: rgba(108, 117, 125, 0.1);
+            --selected-bg: rgba(108, 117, 125, 0.15);
+            --file-bg: rgba(255, 255, 255, 0.8);
+            --upload-bg: rgba(248, 249, 250, 0.6);
+            --progress-bg: #e9ecef;
+            --accent-color: #6c757d;
+            --accent-hover: #5a6268;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            --container-bg: rgba(26, 26, 26, 0.95);
+            --sidebar-bg: rgba(34, 34, 34, 0.9);
+            --toolbar-bg: rgba(40, 40, 40, 0.9);
+            --text-color: #ffffff;
+            --text-secondary: #b0b0b0;
+            --border-color: #404040;
+            --hover-bg: rgba(255, 165, 0, 0.15);
+            --selected-bg: rgba(50, 205, 50, 0.2);
+            --file-bg: rgba(50, 50, 50, 0.8);
+            --upload-bg: rgba(45, 45, 45, 0.7);
+            --progress-bg: #404040;
+            --accent-color: #ffa500;
+            --accent-hover: #ff8c00;
+            --success-color: #32cd32;
+            --danger-color: #ff4444;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-color);
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            background: var(--container-bg);
+            backdrop-filter: blur(10px);
+            transition: background 0.3s ease;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .folder-tree {
+            list-style: none;
+        }
+
+        .folder-item {
+            padding: 8px;
+            margin: 2px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: var(--text-color);
+        }
+
+        .folder-item:hover {
+            background: var(--hover-bg);
+        }
+
+        .folder-item.active {
+            background: var(--selected-bg);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            background: var(--toolbar-bg);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            transition: background 0.3s ease;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background: var(--file-bg);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .search-box::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(255, 165, 0, 0.3);
+        }
+
+        [data-theme="light"] .search-box:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--text-secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: var(--accent-color);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ff0000;
+            transform: translateY(-1px);
+        }
+
+        /* File Upload Area */
+        .upload-area {
+            margin: 20px;
+            padding: 30px;
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            text-align: center;
+            background: var(--upload-bg);
+            transition: all 0.3s;
+            color: var(--text-color);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--accent-color);
+            background: var(--hover-bg);
+            color: var(--accent-color);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            display: none;
+            margin: 20px;
+            padding: 15px;
+            background: var(--toolbar-bg);
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--progress-bg);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            margin-top: 8px;
+            font-size: 14px;
+            text-align: center;
+            color: var(--text-color);
+        }
+
+        /* File Grid */
+        .file-grid {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            align-content: start;
+        }
+
+        .file-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            background: var(--file-bg);
+            border: 2px solid transparent;
+            color: var(--text-color);
+        }
+
+        .file-item:hover {
+            background: var(--hover-bg);
+            transform: translateY(-2px);
+        }
+
+        .file-item.selected {
+            border-color: var(--success-color);
+            background: var(--selected-bg);
+            box-shadow: 0 0 10px rgba(50, 205, 50, 0.3);
+        }
+
+        [data-theme="light"] .file-item.selected {
+            border-color: var(--accent-color);
+            background: var(--selected-bg);
+            box-shadow: 0 0 8px rgba(108, 117, 125, 0.2);
+        }
+
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 8px;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .folder-icon {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            border-radius: 4px;
+        }
+
+        .file-icon.cs-file {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            border-radius: 50%;
+        }
+
+        .file-icon.default {
+            background: linear-gradient(135deg, var(--text-secondary), var(--accent-color));
+            border-radius: 4px;
+        }
+
+        [data-theme="dark"] .folder-icon {
+            background: linear-gradient(135deg, #ffa500, #ff8c00);
+        }
+
+        [data-theme="dark"] .file-icon.cs-file {
+            background: linear-gradient(135deg, #32cd32, #28a745);
+        }
+
+        [data-theme="dark"] .file-icon.default {
+            background: linear-gradient(135deg, #666666, #888888);
+        }
+
+        .file-name {
+            font-size: 12px;
+            text-align: center;
+            word-wrap: break-word;
+            max-width: 100%;
+        }
+
+        .checkbox {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            padding: 15px 20px;
+            background: var(--toolbar-bg);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .breadcrumb-item {
+            display: inline;
+            color: var(--accent-color);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .breadcrumb-item:hover {
+            text-decoration: underline;
+            color: var(--accent-hover);
+        }
+
+        .breadcrumb-item:not(:last-child)::after {
+            content: " > ";
+            color: var(--text-secondary);
+            margin: 0 5px;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: var(--toolbar-bg);
+            padding: 8px 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 12px;
+            color: var(--text-secondary);
+            transition: background 0.3s ease;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--file-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            color: var(--accent-color);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            border-color: var(--accent-color);
+            background: var(--hover-bg);
+        }
+
+        [data-theme="dark"] .theme-toggle {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            border-color: var(--accent-color);
+        }
+
+        [data-theme="dark"] .theme-toggle:hover {
+            box-shadow: 0 6px 20px var(--accent-color);
+            background: var(--selected-bg);
+        }
+    </style>
 </head>
 <body>
-    <header class="site-header">
-        <div class="container">
-            <div class="branding">
-                <h1>Fast Repo Files</h1>
-                <p>Veja os arquivos do seu repositório CS 1.6 e o uso de espaço.</p>
-            </div>
-            <form id="repo-form" class="repo-form" style="display:none">
-                <label class="sr-only" for="owner">Dono</label>
-                <input id="owner" type="text" placeholder="dono (ex: seu-usuario)" required />
-                <label class="sr-only" for="repo">Repositório</label>
-                <input id="repo" type="text" placeholder="repositório (ex: zombie_plague_next)" required />
-                <label class="sr-only" for="branch">Branch</label>
-                <input id="branch" type="text" placeholder="branch (opcional)" />
-                <button type="submit">Carregar</button>
-            </form>
+    <div class="container">
+        <!-- Theme Toggle Button -->
+        <div class="theme-toggle" id="themeToggle" title="Alternar tema">
+            🌙
         </div>
-    </header>
 
-    <main class="container">
-        <section class="repo-summary" id="repo-summary" hidden>
-            <div class="summary-header">
-                <div>
-                    <h2 id="repo-title"></h2>
-                    <p id="repo-desc" class="muted"></p>
-                    <p class="small muted">Exibindo somente a pasta <code>cstrike/</code> deste repositório.</p>
-                </div>
-                <div class="inline-actions">
-                    <a id="repo-link" class="btn ghost" href="#" target="_blank" rel="noopener">Abrir cstrike/ no GitHub</a>
-                </div>
-            </div>
-
-            <div class="meter">
-                <div class="meter-top">
-                    <span>Uso de espaço da pasta cstrike/ (aprox.)</span>
-                    <span id="size-label">0 / 1 GB</span>
-                </div>
-                <div class="bar">
-                    <span id="size-bar" style="width:0%"></span>
-                </div>
-                <div class="meter-legend">
-                    <span class="muted">Limite recomendado: ~1 GB por repositório (GitHub Free)</span>
-                    <span class="muted" style="float:right">Restante: <strong id="size-remaining">-</strong></span>
-                </div>
-            </div>
-
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-value" id="files-count">0</div>
-                    <div class="stat-label">Arquivos</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value" id="folders-count">0</div>
-                    <div class="stat-label">Pastas</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value" id="branch-name">-</div>
-                    <div class="stat-label">Branch</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="controls" id="controls" hidden>
-            <div class="filters">
-                <input id="search" type="search" placeholder="Filtrar por nome de arquivo..." />
-                <select id="ext-filter">
-                    <option value="">Todas extensões</option>
-                    <option value=".sma">.sma</option>
-                    <option value=".inc">.inc</option>
-                    <option value=".mdl">.mdl</option>
-                    <option value=".wav">.wav</option>
-                    <option value=".spr">.spr</option>
-                    <option value=".txt">.txt</option>
-                </select>
-            </div>
-            <div class="toggles" style="display:none"></div>
-        </section>
-
-        <section id="file-list-section" hidden>
-            <div id="loading" class="loading">Carregando arquivos...</div>
-            <div id="error" class="error" hidden></div>
-            <div id="selection-toolbar" class="controls" style="display:none; margin:8px 0 12px 0">
-                <div class="filters" style="gap:10px">
-                    <button id="btn-select-all" type="button">Selecionar tudo</button>
-                    <button id="btn-select-visible" type="button">Selecionar visíveis</button>
-                    <button id="btn-clear-selection" type="button" class="btn ghost">Limpar seleção</button>
-                    <button id="btn-delete-selected" type="button" class="danger">Excluir selecionados (<span id="selected-count">0</span>)</button>
-                </div>
-            </div>
-            <ul id="tree" class="tree" role="tree"></ul>
-        </section>
-
-        <section id="admin-panel" hidden>
-            <div class="meter" style="margin-top:18px">
-                <div class="meter-top">
-                    <span>Administração (somente dono)</span>
-                    <span id="auth-status" class="muted">Desconectado</span>
-                </div>
-                <div class="repo-form" style="margin-top:8px">
-                    <input id="token" type="password" placeholder="Token do GitHub (escopo: repo)" />
-                    <button id="btn-auth" type="button">Entrar</button>
-                    <button id="btn-logout" type="button" class="btn ghost">Sair</button>
-                </div>
-                <p class="small muted">O token nunca é enviado a terceiros e fica apenas no seu navegador (localStorage). Crie em Settings → Developer settings → Personal access tokens.</p>
-            </div>
-
-            <div class="controls" style="margin-top:12px">
-                <div class="filters" style="flex-wrap:wrap">
-                    <div class="stat" style="min-width:280px">
-                        <div class="stat-label">Upload de arquivo para <code>cstrike/</code></div>
-                        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
-                            <input id="upload-path" type="text" placeholder="caminho dentro de cstrike/ (ex: addons/novo.sma)" style="flex:1; min-width:240px" />
-                            <input id="upload-file" type="file" />
-                            <button id="btn-upload" type="button">Enviar</button>
-                        </div>
-                    </div>
-
-                    <div class="stat" style="min-width:280px">
-                        <div class="stat-label">Criar pasta em <code>cstrike/</code></div>
-                        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
-                            <input id="mkdir-path" type="text" placeholder="nova/pasta" />
-                            <button id="btn-mkdir" type="button">Criar</button>
-                        </div>
-                    </div>
-
-                    <div class="stat" style="min-width:280px">
-                        <div class="stat-label">Deletar pasta de <code>cstrike/</code> (recursivo)</div>
-                        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
-                            <input id="rmdir-path" type="text" placeholder="pasta/para/apagar" />
-                            <button id="btn-rmdir" type="button" style="background:#7f1d1d;border-color:#7f1d1d">Apagar</button>
-                        </div>
-                    </div>
-
-                    <div class="stat" style="min-width:280px">
-                        <div class="stat-label">Renomear (arquivo ou pasta) em <code>cstrike/</code></div>
-                        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
-                            <input id="rename-from" type="text" placeholder="antigo/caminho.ext ou pasta/antiga" />
-                            <input id="rename-to" type="text" placeholder="novo/caminho.ext ou pasta/nova" />
-                            <button id="btn-rename" type="button">Renomear</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="site-footer">
-        <div class="container small muted">
-            Dica: Ative o GitHub Pages em Settings → Pages → Build from branch → pasta <code>docs/</code>.
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">🎮 CS 1.6 Manager</div>
+            <ul class="folder-tree" id="folderTree">
+                <li class="folder-item active" data-path="/">📁 Root</li>
+                <li class="folder-item" data-path="/maps">🗺️ Maps</li>
+                <li class="folder-item" data-path="/skins">🎨 Skins</li>
+                <li class="folder-item" data-path="/sounds">🔊 Sounds</li>
+                <li class="folder-item" data-path="/configs">⚙️ Configs</li>
+            </ul>
         </div>
-    </footer>
 
-    
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Breadcrumb -->
+            <div class="breadcrumb" id="breadcrumb">
+                <span class="breadcrumb-item" data-path="/">Home</span>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <input type="text" class="search-box" id="searchBox" placeholder="Buscar arquivos...">
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                    📤 Upload
+                </button>
+                <button class="btn btn-secondary" id="selectAllBtn">✅ Selecionar Todos</button>
+                <button class="btn btn-danger" id="deleteBtn">🗑️ Excluir Selecionados</button>
+                <input type="file" id="fileInput" class="file-input" multiple>
+            </div>
+
+            <!-- Upload Area -->
+            <div class="upload-area" id="uploadArea">
+                <div>📁 Arraste arquivos aqui ou clique em Upload</div>
+                <div style="margin-top: 10px; font-size: 14px; color: #666;">
+                    Suporta: .cfg, .wad, .bsp, .wav, .mp3, .mdl, .spr
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Enviando arquivos...</div>
+            </div>
+
+            <!-- File Grid -->
+            <div class="file-grid" id="fileGrid">
+                <!-- Files will be loaded here -->
+            </div>
+
+            <!-- Status Bar -->
+            <div class="status-bar" id="statusBar">
+                0 itens selecionados
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado da aplicação
+        let currentPath = '/';
+        let selectedFiles = new Set();
+        let currentTheme = 'light';
+        let allFiles = {
+            '/': [
+                { name: 'maps', type: 'folder' },
+                { name: 'skins', type: 'folder' },
+                { name: 'sounds', type: 'folder' },
+                { name: 'configs', type: 'folder' },
+                { name: 'autoexec.cfg', type: 'file', extension: 'cfg' },
+                { name: 'config.cfg', type: 'file', extension: 'cfg' }
+            ],
+            '/maps': [
+                { name: 'de_dust2.bsp', type: 'file', extension: 'bsp' },
+                { name: 'de_inferno.bsp', type: 'file', extension: 'bsp' },
+                { name: 'cs_office.bsp', type: 'file', extension: 'bsp' }
+            ],
+            '/skins': [
+                { name: 'ak47_skin.mdl', type: 'file', extension: 'mdl' },
+                { name: 'knife_skin.mdl', type: 'file', extension: 'mdl' }
+            ],
+            '/sounds': [
+                { name: 'headshot.wav', type: 'file', extension: 'wav' },
+                { name: 'bomb_planted.wav', type: 'file', extension: 'wav' }
+            ],
+            '/configs': [
+                { name: 'fps_config.cfg', type: 'file', extension: 'cfg' },
+                { name: 'pro_settings.cfg', type: 'file', extension: 'cfg' }
+            ]
+        };
+
+        // Elementos DOM
+        const fileGrid = document.getElementById('fileGrid');
+        const searchBox = document.getElementById('searchBox');
+        const breadcrumb = document.getElementById('breadcrumb');
+        const statusBar = document.getElementById('statusBar');
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const themeToggle = document.getElementById('themeToggle');
+
+        // Função para detectar preferência do sistema
+        function getSystemTheme() {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        // Função para aplicar tema
+        function applyTheme(theme) {
+            currentTheme = theme;
+            document.documentElement.setAttribute('data-theme', theme);
+            themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+            themeToggle.title = theme === 'dark' ? 'Modo claro' : 'Modo escuro';
+            
+            // Salvar preferência
+            localStorage.setItem('cs16-theme', theme);
+        }
+
+        // Função para alternar tema
+        function toggleTheme() {
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyTheme(newTheme);
+        }
+
+        // Inicializar tema
+        function initTheme() {
+            // Verificar se há preferência salva
+            const savedTheme = localStorage.getItem('cs16-theme');
+            
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            } else {
+                // Usar preferência do sistema
+                applyTheme(getSystemTheme());
+            }
+        }
+
+        // Event listener para mudanças na preferência do sistema
+        window.matchMedia('(prefers-color-scheme: dark)').addListener((e) => {
+            // Só aplicar automaticamente se não há preferência salva
+            if (!localStorage.getItem('cs16-theme')) {
+                applyTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+
+        // Event listener para o botão de tema
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Função para obter ícone baseado no tipo de arquivo
+        function getFileIcon(item) {
+            if (item.type === 'folder') {
+                return '<div class="file-icon folder-icon">📁</div>';
+            }
+            
+            const icons = {
+                'cfg': '⚙️',
+                'bsp': '🗺️',
+                'wav': '🔊',
+                'mp3': '🎵',
+                'mdl': '🎨',
+                'spr': '✨'
+            };
+            
+            const icon = icons[item.extension] || '📄';
+            const className = item.extension === 'cfg' ? 'cs-file' : 'default';
+            return `<div class="file-icon ${className}">${icon}</div>`;
+        }
+
+        // Função para renderizar arquivos
+        function renderFiles(files = null, searchTerm = '') {
+            const filesToShow = files || allFiles[currentPath] || [];
+            
+            // Filtrar arquivos baseado na busca
+            const filteredFiles = searchTerm 
+                ? filesToShow.filter(file => 
+                    file.name.toLowerCase().startsWith(searchTerm.toLowerCase())
+                  )
+                : filesToShow;
+
+            fileGrid.innerHTML = '';
+            
+            if (filteredFiles.length === 0) {
+                fileGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">Nenhum arquivo encontrado</div>';
+                return;
+            }
+
+            filteredFiles.forEach((item, index) => {
+                const fileElement = document.createElement('div');
+                fileElement.className = 'file-item';
+                fileElement.setAttribute('data-name', item.name);
+                fileElement.setAttribute('data-type', item.type);
+                
+                fileElement.innerHTML = `
+                    ${getFileIcon(item)}
+                    <div class="file-name">${item.name}</div>
+                    <input type="checkbox" class="checkbox" data-file="${item.name}">
+                `;
+                
+                // Event listeners
+                fileElement.addEventListener('click', (e) => {
+                    if (e.target.type === 'checkbox') return;
+                    
+                    if (item.type === 'folder') {
+                        navigateToFolder(currentPath + (currentPath === '/' ? '' : '/') + item.name);
+                    }
+                });
+                
+                fileElement.addEventListener('dblclick', (e) => {
+                    if (item.type === 'file') {
+                        alert(`Abrindo arquivo: ${item.name}`);
+                    }
+                });
+                
+                const checkbox = fileElement.querySelector('.checkbox');
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        selectedFiles.add(item.name);
+                        fileElement.classList.add('selected');
+                    } else {
+                        selectedFiles.delete(item.name);
+                        fileElement.classList.remove('selected');
+                    }
+                    updateStatusBar();
+                });
+                
+                fileGrid.appendChild(fileElement);
+            });
+        }
+
+        // Função para navegar entre pastas
+        function navigateToFolder(path) {
+            currentPath = path;
+            selectedFiles.clear();
+            updateBreadcrumb();
+            renderFiles();
+            updateStatusBar();
+            
+            // Atualizar sidebar
+            document.querySelectorAll('.folder-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-path') === path) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        // Função para atualizar breadcrumb
+        function updateBreadcrumb() {
+            const pathParts = currentPath.split('/').filter(part => part !== '');
+            let breadcrumbHTML = '<span class="breadcrumb-item" data-path="/">Home</span>';
+            
+            let currentPathBuild = '';
+            pathParts.forEach(part => {
+                currentPathBuild += '/' + part;
+                breadcrumbHTML += `<span class="breadcrumb-item" data-path="${currentPathBuild}">${part}</span>`;
+            });
+            
+            breadcrumb.innerHTML = breadcrumbHTML;
+            
+            // Adicionar event listeners
+            document.querySelectorAll('.breadcrumb-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    navigateToFolder(item.getAttribute('data-path'));
+                });
+            });
+        }
+
+        // Função para atualizar status bar
+        function updateStatusBar() {
+            statusBar.textContent = `${selectedFiles.size} itens selecionados`;
+        }
+
+        // Função de busca em tempo real
+        searchBox.addEventListener('input', (e) => {
+            renderFiles(null, e.target.value);
+        });
+
+        // Selecionar todos os arquivos
+        document.getElementById('selectAllBtn').addEventListener('click', () => {
+            const checkboxes = document.querySelectorAll('.checkbox');
+            const allSelected = selectedFiles.size === checkboxes.length;
+            
+            selectedFiles.clear();
+            checkboxes.forEach(checkbox => {
+                const fileItem = checkbox.closest('.file-item');
+                if (!allSelected) {
+                    checkbox.checked = true;
+                    selectedFiles.add(checkbox.getAttribute('data-file'));
+                    fileItem.classList.add('selected');
+                } else {
+                    checkbox.checked = false;
+                    fileItem.classList.remove('selected');
+                }
+            });
+            updateStatusBar();
+        });
+
+        // Excluir arquivos selecionados
+        document.getElementById('deleteBtn').addEventListener('click', () => {
+            if (selectedFiles.size === 0) {
+                alert('Nenhum arquivo selecionado!');
+                return;
+            }
+            
+            if (confirm(`Deseja excluir ${selectedFiles.size} arquivo(s)?`)) {
+                // Remover arquivos do array
+                if (allFiles[currentPath]) {
+                    allFiles[currentPath] = allFiles[currentPath].filter(
+                        file => !selectedFiles.has(file.name)
+                    );
+                }
+                
+                selectedFiles.clear();
+                renderFiles();
+                updateStatusBar();
+                alert('Arquivos excluídos com sucesso!');
+            }
+        });
+
+        // Drag and Drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // Função para processar upload de arquivos
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            
+            progressContainer.style.display = 'block';
+            uploadArea.style.display = 'none';
+            
+            let uploaded = 0;
+            const total = files.length;
+            
+            // Simular upload com progress bar
+            const uploadFile = (index) => {
+                if (index >= files.length) {
+                    // Upload completo
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        uploadArea.style.display = 'block';
+                        alert(`${total} arquivo(s) enviado(s) com sucesso!`);
+                        fileInput.value = '';
+                    }, 500);
+                    return;
+                }
+                
+                const file = files[index];
+                const extension = file.name.split('.').pop().toLowerCase();
+                
+                // Adicionar arquivo ao array atual
+                if (!allFiles[currentPath]) {
+                    allFiles[currentPath] = [];
+                }
+                
+                allFiles[currentPath].push({
+                    name: file.name,
+                    type: 'file',
+                    extension: extension
+                });
+                
+                uploaded++;
+                const progress = (uploaded / total) * 100;
+                progressFill.style.width = progress + '%';
+                progressText.textContent = `Enviando: ${file.name} (${uploaded}/${total})`;
+                
+                // Simular tempo de upload
+                setTimeout(() => {
+                    uploadFile(index + 1);
+                    if (index === files.length - 1) {
+                        renderFiles();
+                    }
+                }, 300 + Math.random() * 500);
+            };
+            
+            uploadFile(0);
+        }
+
+        // Event listeners para sidebar
+        document.querySelectorAll('.folder-item').forEach(item => {
+            item.addEventListener('click', () => {
+                navigateToFolder(item.getAttribute('data-path'));
+            });
+        });
+
+        // Inicialização
+        initTheme(); // Inicializar tema antes de tudo
+        renderFiles();
+        updateBreadcrumb();
+        updateStatusBar();
+    </script>
 </body>
 </html>
-
-
