@@ -233,6 +233,15 @@ function buildTreeList(files, folders, owner, repo, branch){
     updateSelectionToolbar();
 }
 
+function updateSelectionToolbar(){
+    const bar = document.getElementById('selection-toolbar');
+    if(!bar) return;
+    const countEl = document.getElementById('selected-count');
+    const count = selectedPaths.size;
+    if(countEl) countEl.textContent = String(count);
+    bar.style.display = count > 0 ? 'flex' : 'none';
+}
+
 function updateMeter(approxBytes){
     const pct = Math.min(100, (approxBytes / ONE_GB) * 100);
     $('#size-bar').style.width = pct.toFixed(2) + '%';

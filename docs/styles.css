@@ -106,17 +106,17 @@ body{
 
 /* Chips coloridos por extensão */
 .chip-ext{border-color:rgba(255,255,255,.08); color:#cbd5e1}
-.chip-ext.ext-wad{border-color:#fb8c00; color:#fb8c00} /* laranja forte */
+.chip-ext.ext-wad{border-color:#fb8c00 !important; color:#fb8c00 !important} /* laranja forte */
 .chip-ext.ext-sma{border-color:var(--accent); color:var(--accent)} /* verde-limão */
-.chip-ext.ext-wav{border-color:#10b981; color:#10b981} /* verde esmeralda */
-.chip-ext.ext-inc{border-color:var(--accent); color:var(--accent)}
-.chip-ext.ext-txt{border-color:var(--muted); color:var(--muted)}
-.chip-ext.ext-cfg{border-color:var(--accent-2); color:var(--accent-2)}
-.chip-ext.ext-mdl{border-color:#60a5fa; color:#60a5fa} /* azul suave para mdl */
-.chip-ext.ext-spr{border-color:#14b8a6; color:#14b8a6} /* teal para spr */
+.chip-ext.ext-wav{border-color:#10b981 !important; color:#10b981 !important} /* verde esmeralda */
+.chip-ext.ext-inc{border-color:var(--accent) !important; color:var(--accent) !important}
+.chip-ext.ext-txt{border-color:var(--muted) !important; color:var(--muted) !important}
+.chip-ext.ext-cfg{border-color:var(--accent-2) !important; color:var(--accent-2) !important}
+.chip-ext.ext-mdl{border-color:#60a5fa !important; color:#60a5fa !important} /* azul suave para mdl */
+.chip-ext.ext-spr{border-color:#14b8a6 !important; color:#14b8a6 !important} /* teal para spr */
+.chip-ext.ext-bsp{border-color:#2f00ff; color:#2f00ff}
+.chip-ext.ext-nav{border-color:#ae00ff; color:#ae00ff}
 
 @media (max-width:720px){
   .stats{grid-template-columns:1fr 1fr}
 }
-
-
