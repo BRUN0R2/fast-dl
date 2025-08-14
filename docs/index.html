@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arquivos CS 1.6 - GitHub Viewer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <div class="branding">
+                <h1>Fast Repo Files</h1>
+                <p>Veja os arquivos do seu repositório CS 1.6 e o uso de espaço.</p>
+            </div>
+            <form id="repo-form" class="repo-form">
+                <label class="sr-only" for="owner">Dono</label>
+                <input id="owner" type="text" placeholder="dono (ex: seu-usuario)" required />
+                <label class="sr-only" for="repo">Repositório</label>
+                <input id="repo" type="text" placeholder="repositório (ex: zombie_plague_next)" required />
+                <label class="sr-only" for="branch">Branch</label>
+                <input id="branch" type="text" placeholder="branch (opcional)" />
+                <button type="submit">Carregar</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="repo-summary" id="repo-summary" hidden>
+            <div class="summary-header">
+                <div>
+                    <h2 id="repo-title"></h2>
+                    <p id="repo-desc" class="muted"></p>
+                </div>
+                <div class="inline-actions">
+                    <a id="repo-link" class="btn ghost" href="#" target="_blank" rel="noopener">Abrir no GitHub</a>
+                </div>
+            </div>
+
+            <div class="meter">
+                <div class="meter-top">
+                    <span>Uso de espaço do repositório (aprox.)</span>
+                    <span id="size-label">0 / 1 GB</span>
+                </div>
+                <div class="bar">
+                    <span id="size-bar" style="width:0%"></span>
+                </div>
+                <div class="meter-legend">
+                    <span class="muted">Limite recomendado: ~1 GB por repositório (GitHub Free)</span>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value" id="files-count">0</div>
+                    <div class="stat-label">Arquivos</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="folders-count">0</div>
+                    <div class="stat-label">Pastas</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="branch-name">-</div>
+                    <div class="stat-label">Branch</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="controls" id="controls" hidden>
+            <div class="filters">
+                <input id="search" type="search" placeholder="Filtrar por nome de arquivo..." />
+                <select id="ext-filter">
+                    <option value="">Todas extensões</option>
+                    <option value=".sma">.sma</option>
+                    <option value=".inc">.inc</option>
+                    <option value=".mdl">.mdl</option>
+                    <option value=".wav">.wav</option>
+                    <option value=".spr">.spr</option>
+                    <option value=".txt">.txt</option>
+                </select>
+            </div>
+            <div class="toggles">
+                <label class="toggle">
+                    <input type="checkbox" id="show-folders" checked />
+                    <span>Mostrar pastas</span>
+                </label>
+                <label class="toggle">
+                    <input type="checkbox" id="flat-view" />
+                    <span>Lista plana</span>
+                </label>
+            </div>
+        </section>
+
+        <section id="file-list-section" hidden>
+            <div id="loading" class="loading">Carregando arquivos...</div>
+            <div id="error" class="error" hidden></div>
+            <ul id="tree" class="tree" role="tree"></ul>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container small muted">
+            Dica: Ative o GitHub Pages em Settings → Pages → Build from branch → pasta <code>docs/</code>.
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
+

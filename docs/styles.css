@@ -1,0 +1,96 @@
+:root{
+  --bg:#0b0f14;
+  --panel:#0f151c;
+  --muted:#8aa0b2;
+  --text:#e9f0f6;
+  --accent:#2ea043;
+  --accent-2:#3b82f6;
+  --danger:#ef4444;
+  --border: #1b2632;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, Helvetica, sans-serif;
+  background: radial-gradient(1200px 600px at 20% -10%, #10202c 0%, transparent 50%),
+              radial-gradient(800px 800px at 120% 10%, #101d2a 0%, transparent 60%),
+              var(--bg);
+  color:var(--text);
+}
+
+.container{max-width:1100px;margin:0 auto;padding:24px}
+.small{font-size:12px}
+.muted{color:var(--muted)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+
+.site-header{
+  position:sticky;top:0;z-index:10;
+  background:rgba(11,15,20,0.85);
+  backdrop-filter:saturate(140%) blur(8px);
+  border-bottom:1px solid var(--border);
+}
+.site-header .branding h1{margin:0 0 4px 0;font-size:22px}
+.site-header .branding p{margin:0;font-size:14px;color:var(--muted)}
+
+.repo-form{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.repo-form input{
+  background:var(--panel);
+  color:var(--text);
+  border:1px solid var(--border);
+  padding:10px 12px;border-radius:8px;outline:none;
+}
+.repo-form button{
+  background:linear-gradient(180deg, var(--accent-2), #1d4ed8);
+  border:none;color:white;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600
+}
+.repo-form button:hover{filter:brightness(1.05)}
+
+.repo-summary{margin-top:8px}
+.summary-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.btn.ghost{
+  display:inline-block;padding:8px 12px;border:1px solid var(--border);
+  background:transparent;color:var(--text);border-radius:8px;text-decoration:none
+}
+
+.meter{margin-top:18px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px}
+.meter-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:14px;color:var(--muted)}
+.bar{height:12px;background:#0b1218;border:1px solid var(--border);border-radius:999px;overflow:hidden}
+.bar > span{display:block;height:100%;background:linear-gradient(90deg, var(--accent), #22c55e);border-right:1px solid rgba(255,255,255,.2)}
+.meter-legend{margin-top:6px;font-size:12px;color:var(--muted)}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px}
+.stat-value{font-size:22px;font-weight:700}
+.stat-label{font-size:12px;color:var(--muted)}
+
+.controls{display:flex;align-items:center;justify-content:space-between;margin:18px 0}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filters input,.filters select{background:var(--panel);color:var(--text);border:1px solid var(--border);padding:10px;border-radius:8px}
+.toggle{display:flex;align-items:center;gap:8px}
+
+.loading{padding:16px;color:var(--muted)}
+.error{background:rgba(239,68,68,.1);border:1px solid #7f1d1d;color:#fecaca;padding:12px;border-radius:8px}
+
+.tree{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.tree li{border-top:1px solid var(--border)}
+.tree li:first-child{border-top:none}
+.row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(0,0,0,.15)}
+.row:hover{background:rgba(255,255,255,.03)}
+.row .name{flex:1;display:flex;align-items:center;gap:10px;word-break:break-all}
+.row .meta{display:flex;gap:12px;color:var(--muted);font-size:12px}
+.chip{font-size:11px;border:1px solid var(--border);padding:2px 8px;border-radius:999px;color:var(--muted)}
+.icon{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center}
+.file-link{color:inherit;text-decoration:none}
+.file-link:hover{text-decoration:underline}
+
+.indent{padding-left:24px}
+
+.site-footer{margin-top:40px;border-top:1px solid var(--border);background:rgba(0,0,0,.2)}
+
+@media (max-width:720px){
+  .stats{grid-template-columns:1fr 1fr}
+}
+
+
