@@ -103,6 +103,7 @@ function buildRow(item, depth){
     row.appendChild(selectWrap);
     // dataset para seleção em massa
     li.dataset.path = item.name;
+    li.dataset.type = item.type;
     li.appendChild(row);
     return li;
 }
@@ -389,13 +390,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // seleção em massa
     $('#btn-select-visible').addEventListener('click', () => {
         // marca todos os itens atualmente renderizados
-        $$('#tree .row').forEach(row => {
-            const label = row.querySelector('.file-link');
-            if(!label) return;
-            // reconstruir caminho com base no texto + pastas abertas não é trivial.
-            // Em vez disso, usamos dataset no buildRow.
-        });
-        // Nada aqui, deixamos para dataset abaixo
         $$('#tree li').forEach(li => {
             const path = li.dataset.path;
             const cb = li.querySelector('input[type="checkbox"]');
@@ -420,11 +414,35 @@ document.addEventListener('DOMContentLoaded', () => {
             })();
             const confirmMsg = `Excluir ${selectedPaths.size} item(ns)? Esta ação cria commits de remoção.`;
             if(!confirm(confirmMsg)) return;
-            for(const path of Array.from(selectedPaths)){
+            // deletar somente arquivos; para pastas, deletamos recursivamente
+            const paths = Array.from(selectedPaths);
+            for(const path of paths){
                 if(!path.startsWith('cstrike/')) continue;
-                const sha = await getShaForPath(owner, repo, branch, path);
-                if(!sha) continue;
-                await (async()=>{
+                // se for pasta marcada, delete recursivo dos arquivos dentro
+                const li = $(`#tree li[data-path="${CSS.escape(path)}"]`);
+                const isDir = li && li.dataset.type === 'dir';
+                if(isDir){
+                    // apagar todos os arquivos sob a pasta
+                    const { files } = repoCache;
+                    const under = files.filter(f => f.path.startsWith(path.endsWith('/') ? path : path + '/'));
+                    for(const f of under){
+                        const sha = await getShaForPath(owner, repo, branch, f.path);
+                        if(!sha) continue;
+                        const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(f.path)}`;
+                        const body = { message: `chore: delete ${f.path}`, sha, branch };
+                        const res = await fetch(url, { method:'DELETE', headers:{
+                            'Authorization': `Bearer ${authToken}`,
+                            'Accept': 'application/vnd.github+json',
+                            'Content-Type': 'application/json'
+                        }, body: JSON.stringify(body)});
+                        if(!res.ok){
+                            const t = await res.text().catch(()=>"");
+                            throw new Error(`Falha ao excluir ${f.path}: ${res.status} ${t}`);
+                        }
+                    }
+                }else{
+                    const sha = await getShaForPath(owner, repo, branch, path);
+                    if(!sha) continue;
                     const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
                     const body = { message: `chore: delete ${path}`, sha, branch };
                     const res = await fetch(url, { method:'DELETE', headers:{
@@ -436,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const t = await res.text().catch(()=>"");
                         throw new Error(`Falha ao excluir ${path}: ${res.status} ${t}`);
                     }
-                })();
+                }
             }
             selectedPaths.clear();
             updateSelectionToolbar();
