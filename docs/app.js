@@ -26,8 +26,8 @@ function formatBytes(bytes){
 }
 
 function icon(kind){
-    if(kind === 'dir') return '📁';
-    return '📄';
+    if(kind === 'dir') return '';
+    return '';
 }
 
 function getExt(name){
@@ -38,37 +38,52 @@ function getExt(name){
 function buildRow(item, depth){
     const li = document.createElement('li');
     const row = document.createElement('div');
-    row.className = 'row';
+    row.className = `row ${item.type === 'dir' ? 'dir' : 'file'}`;
     if(depth > 0) row.style.paddingLeft = `${10 + depth * 16}px`;
 
     const name = document.createElement('div');
     name.className = 'name';
-    const a = document.createElement('a');
-    a.className = 'file-link';
-    a.textContent = item.name;
-    a.href = item.html_url || '#';
-    a.target = '_blank';
-    a.rel = 'noopener';
+    if(item.type === 'dir'){
+        const caret = document.createElement('span');
+        caret.className = 'caret' + (item.open ? ' open' : '');
+        name.appendChild(caret);
+    }
     const ic = document.createElement('span');
     ic.className = 'icon';
     ic.textContent = icon(item.type);
     name.appendChild(ic);
-    name.appendChild(a);
+
+    const displayName = item.name.replace(/^cstrike\//, '');
+    if(item.type === 'dir'){
+        const span = document.createElement('span');
+        span.className = 'file-link';
+        span.textContent = displayName;
+        name.appendChild(span);
+    }else{
+        const a = document.createElement('a');
+        a.className = 'file-link';
+        a.textContent = displayName;
+        a.href = item.html_url || '#';
+        a.target = '_blank';
+        a.rel = 'noopener';
+        name.appendChild(a);
+    }
 
     const meta = document.createElement('div');
     meta.className = 'meta';
     if(item.type !== 'dir'){
-        const size = document.createElement('span');
-        size.className = 'chip';
-        size.textContent = formatBytes(item.size || 0);
-        meta.appendChild(size);
-    }
-    const ext = getExt(item.name);
-    if(ext){
-        const ex = document.createElement('span');
-        ex.className = 'chip';
-        ex.textContent = ext;
-        meta.appendChild(ex);
+        const sizeChip = document.createElement('span');
+        sizeChip.className = 'chip';
+        sizeChip.textContent = formatBytes(item.size || 0);
+        meta.appendChild(sizeChip);
+
+        const ext = getExt(item.name);
+        if(ext){
+            const ex = document.createElement('span');
+            ex.className = 'chip';
+            ex.textContent = ext;
+            meta.appendChild(ex);
+        }
     }
 
     row.appendChild(name);
@@ -101,58 +116,89 @@ async function listAllFiles(owner, repo, branch){
     return { files, folders, defaultBranch, repoInfo };
 }
 
+// estado de expansão das pastas
+const openDirs = new Set();
+
 function buildTreeList(files, folders, owner, repo, branch){
     const ul = $('#tree');
     ul.innerHTML = '';
-    const showFolders = $('#show-folders').checked;
-    const flat = $('#flat-view').checked;
     const q = $('#search').value.trim().toLowerCase();
     const extFilter = $('#ext-filter').value;
 
     const makeHtmlUrl = (path) => `https://github.com/${owner}/${repo}/blob/${encodeURIComponent(branch)}/${path}`;
 
-    let entries = [];
-    if(flat){
-        entries = files.map(f => ({
-            name: f.path,
-            type: 'file',
-            size: f.size || 0,
-            html_url: makeHtmlUrl(f.path)
-        }));
-    }else{
-        // hierarchical: we will still render flattened with indentation via name splits
-        entries = [];
-        for(const f of files){
-            entries.push({
-                name: f.path,
-                type: 'file',
-                size: f.size || 0,
-                html_url: makeHtmlUrl(f.path)
-            });
-        }
-        if(showFolders){
-            for(const d of folders){
-                entries.push({ name: d.path + '/', type: 'dir', size: 0, html_url: `https://github.com/${owner}/${repo}/tree/${encodeURIComponent(branch)}/${d.path}` });
+    // mapa de filhos por pasta
+    const children = new Map();
+    const pushChild = (parent, node) => {
+        if(!children.has(parent)) children.set(parent, []);
+        children.get(parent).push(node);
+    };
+
+    for(const d of folders){
+        const parent = d.path.includes('/') ? d.path.slice(0, d.path.lastIndexOf('/')) : '';
+        pushChild(parent || 'cstrike', { type:'dir', name:d.path, path:d.path });
+    }
+    for(const f of files){
+        const parent = f.path.includes('/') ? f.path.slice(0, f.path.lastIndexOf('/')) : 'cstrike';
+        pushChild(parent, { type:'file', name:f.path, path:f.path, size:f.size || 0, html_url: makeHtmlUrl(f.path) });
+    }
+
+    function hasMatchDeep(folderPath, query){
+        const list = children.get(folderPath) || [];
+        for(const child of list){
+            const nameOnly = child.name.replace(/^cstrike\//, '');
+            if(child.type === 'dir'){
+                if(nameOnly.toLowerCase().includes(query) || hasMatchDeep(child.name, query)) return true;
+            }else{
+                if(nameOnly.toLowerCase().includes(query)) return true;
             }
         }
-        // sort: folders first then files, then alpha
-        entries.sort((a,b)=>{
+        return false;
+    }
+
+    function renderFolder(folderPath, depth){
+        const list = children.get(folderPath) || [];
+        list.sort((a,b)=>{
             if(a.type !== b.type) return a.type === 'dir' ? -1 : 1;
             return a.name.localeCompare(b.name);
         });
+
+        if(folderPath !== 'cstrike'){
+            const item = { type: 'dir', name: folderPath, open: openDirs.has(folderPath) };
+            const li = buildRow(item, depth);
+            const caret = li.querySelector('.caret');
+            if(caret){
+                caret.addEventListener('click', () => {
+                    if(openDirs.has(folderPath)) openDirs.delete(folderPath); else openDirs.add(folderPath);
+                    buildTreeList(files, folders, owner, repo, branch);
+                });
+            }
+            ul.appendChild(li);
+        }
+
+        if(folderPath === 'cstrike' || openDirs.has(folderPath)){
+            for(const child of list){
+                if(child.type === 'dir'){
+                    const nameOnly = child.name.replace(/^cstrike\//, '');
+                    const show = !q || nameOnly.toLowerCase().includes(q) || hasMatchDeep(child.name, q);
+                    if(show) renderFolder(child.name, depth + (folderPath === 'cstrike' ? 0 : 1));
+                }else{
+                    const nameOnly = child.name.replace(/^cstrike\//, '');
+                    if(q && !nameOnly.toLowerCase().includes(q)) continue;
+                    if(extFilter && !nameOnly.toLowerCase().endsWith(extFilter.toLowerCase())) continue;
+                    const li = buildRow(child, depth + (folderPath === 'cstrike' ? 0 : 1));
+                    ul.appendChild(li);
+                }
+            }
+        }
     }
 
-    // filtering
-    entries = entries.filter(e => {
-        if(q && !e.name.toLowerCase().includes(q)) return false;
-        if(extFilter && e.type !== 'dir' && !e.name.toLowerCase().endsWith(extFilter.toLowerCase())) return false;
-        return true;
-    });
-
-    for(const e of entries){
-        const depth = Math.max(0, e.name.split('/').length - 1);
-        ul.appendChild(buildRow(e, depth));
-    }
+    // raiz
+    openDirs.add('cstrike');
+    const rootItem = { type:'dir', name:'cstrike', open:true };
+    const rootLi = buildRow(rootItem, 0);
+    ul.appendChild(rootLi);
+    renderFolder('cstrike', 0);
 }
 
 function updateMeter(approxBytes){

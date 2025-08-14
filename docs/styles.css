@@ -3,10 +3,12 @@
   --panel:#0f151c;
   --muted:#8aa0b2;
   --text:#e9f0f6;
-  --accent:#2ea043;
-  --accent-2:#3b82f6;
+  --accent:#9cff57; /* verde limão suave para detalhes */
+  --accent-2:#fb8c00; /* laranja para pastas e destaques */
   --danger:#ef4444;
-  --border: #1b2632;
+  --border:#1b2632;
+  --folder:#f59e0b; /* laranja pasta */
+  --file:#94a3b8; /* cinza-azulado arquivo */
 }
 
 *{box-sizing:border-box}
@@ -88,6 +90,16 @@ body{
 .indent{padding-left:24px}
 
 .site-footer{margin-top:40px;border-top:1px solid var(--border);background:rgba(0,0,0,.2)}
+
+/* Cores diferentes para pasta/arquivo */
+.row.dir .icon{color:var(--folder)}
+.row.dir .file-link{color:#f3ad3b}
+.row.file .icon{color:var(--file)}
+.row.file .file-link{color:#cbd5e1}
+
+/* Indicadores de expandir/colapsar */
+.caret{width:10px;height:10px;border-left:6px solid var(--muted);border-top:4px solid transparent;border-bottom:4px solid transparent;display:inline-block;transition:transform .15s ease}
+.caret.open{transform:rotate(90deg)}
 
 @media (max-width:720px){
   .stats{grid-template-columns:1fr 1fr}

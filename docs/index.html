@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
     <header class="site-header">
@@ -16,7 +16,7 @@
                 <h1>Fast Repo Files</h1>
                 <p>Veja os arquivos do seu repositório CS 1.6 e o uso de espaço.</p>
             </div>
-            <form id="repo-form" class="repo-form">
+            <form id="repo-form" class="repo-form" style="display:none">
                 <label class="sr-only" for="owner">Dono</label>
                 <input id="owner" type="text" placeholder="dono (ex: seu-usuario)" required />
                 <label class="sr-only" for="repo">Repositório</label>
@@ -84,16 +84,7 @@
                     <option value=".txt">.txt</option>
                 </select>
             </div>
-            <div class="toggles">
-                <label class="toggle">
-                    <input type="checkbox" id="show-folders" checked />
-                    <span>Mostrar pastas</span>
-                </label>
-                <label class="toggle">
-                    <input type="checkbox" id="flat-view" />
-                    <span>Lista plana</span>
-                </label>
-            </div>
+            <div class="toggles" style="display:none"></div>
         </section>
 
         <section id="file-list-section" hidden>
@@ -162,7 +153,7 @@
         </div>
     </footer>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=2"></script>
 </body>
 </html>
 
